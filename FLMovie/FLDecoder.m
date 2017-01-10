@@ -158,7 +158,9 @@
     //5.find decoder
     p_codec_parameters = p_format_context->streams[videoindex]->codecpar;
     p_codec = avcodec_find_decoder(p_codec_parameters->codec_id);
-    p_codec_context = avcodec_alloc_context3(p_codec);
+//    p_codec_context = avcodec_alloc_context3(p_codec);
+    p_codec_context  = stream->codec;
+
     if (p_codec == NULL) {
         printf("Codec not found.\n");
         return -1;

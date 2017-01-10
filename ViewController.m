@@ -112,7 +112,9 @@
 - (void)gotopaly
 {
     _lastFrameTime = -1;
-    NSURL *url = [[NSBundle mainBundle] URLForResource:@"你好" withExtension:@"ts"];
+//    NSURL *url = [[NSBundle mainBundle] URLForResource:@"你好" withExtension:@"ts"];
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
+
     NSString *fileUrl = [url absoluteString];
     //    NSString *fileUrl = @"rtmp://202.69.69.180:443/webcast/bshdlive-pc";//[url absoluteString]
     //    NSString *fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
@@ -122,6 +124,8 @@
     
     [_nextFrameTimer invalidate];
     if (_flDecoder) {
+        
+        _showView.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH*_flDecoder.sourceHeight/_flDecoder.sourceWidth);
         self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/_flDecoder.fps
                                                                target:self
                                                              selector:@selector(displayNextFrame:)
