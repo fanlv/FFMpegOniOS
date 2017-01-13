@@ -22,12 +22,13 @@
 
 #import "ViewController.h"
 #import "FLDecoder.h"
+#import "OpenGLView20.h"
 
 
 @interface ViewController ()
 {
     FLDecoder *_flDecoder;
-    UIImageView *_showView;
+    OpenGLView20 *_showView;
     UILabel *_timeLabel;
     UILabel *_fpsLabel;
 
@@ -44,7 +45,7 @@
 {
     [super viewDidLoad];
     
-    _showView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH)];
+    _showView = [[OpenGLView20 alloc] initWithFrame:CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH)];
     _showView.backgroundColor = RGB(222, 222, 222);
     [self.view addSubview:_showView];
     
@@ -92,11 +93,17 @@
     if (sender.selected)
     {
         [_nextFrameTimer invalidate];
+        self.nextFrameTimer = nil;
         [sender setTitle:@"继续" forState:UIControlStateNormal];
+        
+        [_flDecoder seekTime:30];
 
     }
     else
     {
+        [_nextFrameTimer invalidate];
+        self.nextFrameTimer = nil;
+
         self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/_flDecoder.fps//时间这样算还有问题
                                                                target:self
                                                              selector:@selector(displayNextFrame:)
@@ -114,6 +121,8 @@
     _lastFrameTime = -1;
 //    NSURL *url = [[NSBundle mainBundle] URLForResource:@"你好" withExtension:@"ts"];
     NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
+//    NSURL *url = [[NSBundle mainBundle] URLForResource:@"fanlv" withExtension:@"h264"];
+//    NSURL *url = [[NSBundle mainBundle] URLForResource:@"sample" withExtension:@"flv"];
 
     NSString *fileUrl = [url absoluteString];
     //    NSString *fileUrl = @"rtmp://202.69.69.180:443/webcast/bshdlive-pc";//[url absoluteString]
@@ -126,7 +135,7 @@
     if (_flDecoder) {
         
         _showView.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH*_flDecoder.sourceHeight/_flDecoder.sourceWidth);
-        self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/_flDecoder.fps
+        self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/(_flDecoder.fps*3)
                                                                target:self
                                                              selector:@selector(displayNextFrame:)
                                                              userInfo:nil
@@ -152,12 +161,22 @@
     NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
 
     _timeLabel.text  = [self dealTime:_flDecoder.currentTime];
-    if (![_flDecoder stepFrame]) {
-        [timer invalidate];
-        _showView.image = nil;
-        return;
+//    if (![_flDecoder stepFrame]) {
+//    }
+//    _showView.image = _flDecoder.currentImage;
+    
+    
+    AVFrame *frame = [_flDecoder stepFrame];
+    if (frame) {
+        [_showView displayYUV420pData:frame];
     }
-    _showView.image = _flDecoder.currentImage;
+    else
+    {
+//        [timer invalidate];
+//        _showView.image = nil;
+        return;
+
+    }
     
 
     float frameTime = 1.0 / ([NSDate timeIntervalSinceReferenceDate] - startTime);

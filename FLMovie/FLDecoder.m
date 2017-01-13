@@ -8,38 +8,117 @@
 
 #import "FLDecoder.h"
 
-#include "libavcodec/avcodec.h"
+
+#import <AudioToolbox/AudioToolbox.h>
+#import <AVFoundation/AVFoundation.h>
+#import <Accelerate/Accelerate.h>
+
+
+
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
-#include "libavutil/channel_layout.h"
-#include "libavutil/common.h"
-#include "libavutil/imgutils.h"
-#include "libavutil/opt.h"
-#include "libavutil/mathematics.h"
-#include "libavutil/samplefmt.h"
-#include "libswresample/swresample.h"
+#import "AudioPacketQueue.h"
+#import "AudioPlayer.h"
+#import "AudioUtilities.h"
+
+
+typedef enum _AUDIO_STATE {
+    AUDIO_STATE_READY           = 0,
+    AUDIO_STATE_STOP            = 1,
+    AUDIO_STATE_PLAYING         = 2,
+    AUDIO_STATE_PAUSE           = 3,
+    AUDIO_STATE_SEEKING         = 4
+} AUDIO_STATE;
+
+
+
+/**
+ *  缓存区的个数，一般3个
+ */
+#define kNumberAudioQueueBuffers 3
+#define kDefaultOutputBufferSize 8000
+
+
+#define kNumAQBufs 3
+#define kAudioBufferSeconds 3
+
 
 @interface FLDecoder()
 {
     AVFormatContext *p_format_context;
-    AVCodecParameters *p_codec_parameters;
-    AVCodec *p_codec;
+    AVCodecParameters *p_vedio_codec_parameters;
+    AVCodecParameters *p_audio_codec_parameters;
+    AVCodec *p_vedio_codec;
+    AVCodec *p_audio_codec;
+    AVCodecContext *p_video_codec_context;
+    AVCodecContext *p_audio_codec_context;
+    AVPacket *_currentVedioPacket;
+
     AVFrame *p_frame;
-    uint8_t *out_buffer;
-    AVPacket *packet;
+    
+    
+
+    AVPacket packet_;
+    AVPacket currentPacket_;
 //    struct  SwsContext *img_convert_ctx;
-    AVCodecContext *p_codec_context;
-    AVPicture picture;
-    int  videoindex, frame_cnt;
-    double              fps;
+//    uint8_t *out_vedio_buffer,*out_audio_buffer;
+
+    //------------audio----------------
+    int in_channel_layout;
+    struct SwrContext *au_convert_ctx;
+    
+//    AudioQueueRef                   _outputQueue;
+//    AudioStreamBasicDescription     audioStreamBasicDesc_;
+    AudioQueueBufferRef     _outputBuffers[kNumberAudioQueueBuffers];
+    //---------------------------------
+    
+    int  videoStream,audioStream,frame_cnt;
+    double              _fps;
     BOOL                isReleaseResources;
+    
+    
+
+//    AudioStreamBasicDescription     _audioFormat;
+
+    
+    
+    
+    
+    
+    
+    
+    AudioPlayer *aPlayer;
+
+    NSString *playingFilePath_;
+    AudioStreamBasicDescription audioStreamBasicDesc_;
+    AudioQueueRef audioQueue_;
+    AudioQueueBufferRef audioQueueBuffer_[kNumAQBufs];
+    BOOL started_, finished_;
+    NSTimeInterval durationTime_, startedTime_;
+    NSInteger state_;
+    NSTimer *seekTimer_;
+    NSLock *decodeLock_;
+    int16_t *audioBuffer_;
+    NSUInteger audioBufferSize_;
+
+    
+    NSInteger  decodedDataSize_;
+ 
+    BOOL inBuffer_;
+
+
 }
 
+@property (nonatomic, strong) UIImage *currentImage;
+@property (assign, nonatomic) AudioQueueRef   outputQueue;
+
+@property (nonatomic, strong) NSMutableArray *receiveData;//接收数据的数组
 
 @end
 
 
 @implementation FLDecoder
+
 
 
 #pragma mark - 重写属性访问方法
@@ -53,29 +132,53 @@
 }
 -(UIImage *)currentImage
 {
-    if (!p_frame->data[0]) return nil;
-    return [self imageFromAVPicture];
+    return _currentImage;
 }
 -(double)duration
 {
-    return (double)p_format_context->duration / AV_TIME_BASE;
+    if (p_format_context) {
+        return (double)p_format_context->duration / AV_TIME_BASE;
+    }
+    return 0;
 }
 - (double)currentTime
 {
-    AVRational timeBase = p_format_context->streams[videoindex]->time_base;
-    return packet->pts * (double)timeBase.num / timeBase.den;
+    if (p_format_context && videoStream >= 0) {
+        AVRational timeBase = p_format_context->streams[videoStream]->time_base;
+        return _currentVedioPacket->pts * (double)timeBase.num / timeBase.den;
+    }
+    return 0;
+
 }
 - (int)sourceWidth
 {
-    return p_codec_parameters->width;
+    if (p_vedio_codec_parameters) {
+        return p_vedio_codec_parameters->width;
+    }
+    return 640;
 }
 - (int)sourceHeight
 {
-    return p_codec_parameters->height;
+    if (p_vedio_codec_parameters) {
+        return p_vedio_codec_parameters->height;
+    }
+    return 320;
 }
 - (double)fps
 {
-    return fps;
+    if (videoStream<0) {
+        return 30;
+    }
+    AVStream *stream = p_format_context->streams[videoStream];
+    if(stream->avg_frame_rate.den && stream->avg_frame_rate.num)
+    {
+        _fps = av_q2d(stream->avg_frame_rate);
+    }
+    else
+    {
+        _fps = 30;
+    }
+    return _fps;
 }
 
 
@@ -109,14 +212,13 @@
 
     char *filepath = (char *)[moviePath UTF8String];
     isReleaseResources = NO;
-
-    //1.register init net work
+    printf("%s\n", avcodec_configuration());
+    
+    
+    
+    //1.register and init net work
     av_register_all();
     avformat_network_init();
-    
-    //    AVDictionary *opts = 0;
-    //    av_dict_set(&opts, "rtsp_transport", "tcp", 0);
-    
     p_format_context = avformat_alloc_context();
     
     //2.open input stream
@@ -133,65 +235,114 @@
         return -1;
     }
     
-    //4.find video stream
-    videoindex = -1;
+    //4.find video、audio stream
+    videoStream = -1;
+    audioStream = -1;
     for (int i = 0; i<p_format_context->nb_streams; i++)
+    {
         if (p_format_context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            videoindex = i;
-            break;
+            videoStream = i;
+        }else if (p_format_context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+            audioStream = i;
         }
-    if (videoindex == -1) {
+    }
+    if (videoStream == -1) {
         fprintf(stderr, "Didn't find a video stream.\n");
-        return -1;
     }
-    AVStream *stream = p_format_context->streams[videoindex];
-    if(stream->avg_frame_rate.den && stream->avg_frame_rate.num)
-    {
-        fps = av_q2d(stream->avg_frame_rate);
-    }
-    else
-    {
-        fps = 30;
+    if (audioStream == -1) {
+        fprintf(stderr, "Didn't find a audio stream.\n");
     }
     
     
     //5.find decoder
-    p_codec_parameters = p_format_context->streams[videoindex]->codecpar;
-    p_codec = avcodec_find_decoder(p_codec_parameters->codec_id);
-//    p_codec_context = avcodec_alloc_context3(p_codec);
-    p_codec_context  = stream->codec;
-
-    if (p_codec == NULL) {
-        printf("Codec not found.\n");
-        return -1;
+    if (videoStream != -1) {
+        p_vedio_codec_parameters = p_format_context->streams[videoStream]->codecpar;
+        p_vedio_codec = avcodec_find_decoder(p_vedio_codec_parameters->codec_id);
+        p_video_codec_context = avcodec_alloc_context3(NULL);
+        avcodec_parameters_to_context(p_video_codec_context, p_format_context->streams[videoStream]->codecpar);
+        
+        if (p_vedio_codec == NULL) {
+            printf("Codec not found.\n");
+            return -1;
+        }
+        
+        if (avcodec_open2(p_video_codec_context, p_vedio_codec, NULL)<0) {
+            printf("Could not open vedio codec.\n");
+            return -1;
+        }
+        
+        _outputWidth = p_vedio_codec_parameters->width;
+        _outputHeight = p_vedio_codec_parameters->height;
     }
-    if (avcodec_open2(p_codec_context, p_codec, NULL)<0) {
-        printf("Could not open codec.\n");
-        return -1;
+
+    if (audioStream != -1) {
+        
+        [aPlayer stop:YES];
+        p_audio_codec_parameters = p_format_context->streams[audioStream]->codecpar;
+        p_audio_codec = avcodec_find_decoder(p_audio_codec_parameters->codec_id);
+        p_audio_codec_context = avcodec_alloc_context3(NULL);
+        avcodec_parameters_to_context(p_audio_codec_context, p_format_context->streams[audioStream]->codecpar);
+        
+        if (p_audio_codec == NULL) {
+            printf("Codec not found.\n");
+            return -1;
+        }
+        
+        if (avcodec_open2(p_audio_codec_context, p_audio_codec, NULL)<0) {
+            printf("Could not open audio codec.\n");
+            return -1;
+        }
+        
+//        [self initAudioOutput];
+        
+        aPlayer = [[AudioPlayer alloc] initAuido:nil withCodecCtx:(AVCodecContext *)p_audio_codec_context];
+        if ([aPlayer getStatus] != eAudioRunning) {
+            NSLog(@"播放");
+            
+            [aPlayer play];
+        }
+        
+    
+     
+        // Debug -- Begin
+        printf("比特率 %3lld\n", p_format_context->bit_rate);
+        printf("解码器名称 %s\n", p_audio_codec_context->codec->long_name);
+        printf("time_base  %d \n", p_audio_codec_context->time_base.num);
+        printf("声道数  %d \n", p_audio_codec_context->channels);
+        printf("sample per second  %d \n", p_audio_codec_context->sample_rate);
+        // Debug -- End
+
+
     }
     
-    _outputWidth = p_codec_parameters->width;
-    _outputHeight = p_codec_parameters->height;
-
     
+
+//    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+//    NSString *docDir = [paths objectAtIndex:0];
+//    
+//    NSString *filePAth  = [NSString stringWithFormat:@"%@/output.pcm",docDir];
+//    
+//    fp_pcm=fopen([filePAth UTF8String], "wb");
+
+ 
+
     //6.init frame and buffer
+    _currentVedioPacket = (AVPacket *)av_malloc(sizeof(AVPacket));
+
     p_frame = av_frame_alloc();
-    out_buffer = (uint8_t *)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P, p_codec_parameters->width, p_codec_parameters->height, 1));
-//    av_image_fill_arrays(p_frame_YUV->data, p_frame_YUV->linesize, out_buffer, AV_PIX_FMT_YUV420P, p_codec_parameters->width, p_codec_parameters->height, 1);
-    
-    
-    
-    packet = (AVPacket *)av_malloc(sizeof(AVPacket));
-    
+
     printf("--------------- File Information ----------------\n");
     av_dump_format(p_format_context, 0, filepath, 0);
     printf("-------------------------------------------------\n");
-    
-//    img_convert_ctx = sws_getContext(p_codec_parameters->width, p_codec_parameters->height,p_codec_parameters->format,p_codec_parameters->width, p_codec_parameters->height, AV_PIX_FMT_RGB24, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-    
+
+
+
     
     return 0;
 }
+
+
+
 
 #pragma mark - Action
 
@@ -206,39 +357,62 @@
 {
     
 }
-
+short *sample_buffer;
 
 /* 从视频流中读取下一帧。返回假，如果没有帧读取（视频）。 */
-- (BOOL)stepFrame {
+- (AVFrame *)stepFrame {
+
+    if(!p_format_context)
+        return nil;
+
     int ret = -1;
-    while (av_read_frame(p_format_context, packet) >= 0)
+    while (av_read_frame(p_format_context, _currentVedioPacket) >= 0)
     {
-        if (packet->stream_index == videoindex)
+
+        if (_currentVedioPacket->stream_index == videoStream)
         {
-            ret = avcodec_send_packet(p_codec_context, packet);
-            avcodec_receive_frame(p_codec_context, p_frame);
+            ret = avcodec_send_packet(p_video_codec_context, _currentVedioPacket);
+            avcodec_receive_frame(p_video_codec_context, p_frame);
+//            _currentImage = [self imageFromAVPicture];//舍去
+            av_packet_unref(_currentVedioPacket);
             break;
         }
+        else{
+            
+            if ([aPlayer putAVPacket:_currentVedioPacket] <=0 ) {
+                NSLog(@"Put Audio packet error");
+            }
+            
+            if(videoStream==-1)
+                break;
+                
+
+        }
+        
+//        av_packet_unref(_currentVedioPacket);
     }
     if (ret < 0 && isReleaseResources == NO)
     {
         [self releaseResources];
+        return nil;
     }
-    return ret >= 0;
+    return p_frame;
 }
 
 
 - (void)seekTime:(double)seconds
 {
-    AVRational timeBase = p_format_context->streams[videoindex]->time_base;
+    AVRational timeBase = p_format_context->streams[videoStream]->time_base;
     int64_t targetFrame = (int64_t)((double)timeBase.den / timeBase.num * seconds);
     avformat_seek_file(p_format_context,
-                       videoindex,
+                       videoStream,
                        0,
                        targetFrame,
                        targetFrame,
                        AVSEEK_FLAG_FRAME);
-    avcodec_flush_buffers(p_codec_context);
+    avcodec_flush_buffers(p_video_codec_context);
+    avcodec_flush_buffers(p_audio_codec_context);
+
 }
 
 - (void)releaseResources
@@ -246,18 +420,21 @@
     NSLog(@"释放资源");
     //    SJLogFunc
     isReleaseResources = YES;
-    // 释放RGB
-    avpicture_free(&picture);
+    
+//    [aPlayer stop:YES];
+
     // 释放frame
-    if (packet) {
-        av_packet_unref(packet);
+    if (_currentVedioPacket) {
+        av_packet_unref(_currentVedioPacket);
     }
     // 释放YUV frame
     av_frame_free(&p_frame);
     
     // 关闭解码器
-    if (p_codec_context)
-        avcodec_close(p_codec_context);
+    if (p_audio_codec_context)
+        avcodec_close(p_audio_codec_context);
+    if (p_video_codec_context)
+        avcodec_close(p_video_codec_context);
     // 关闭文件
     if (p_format_context)
         avformat_close_input(&p_format_context);
@@ -272,57 +449,62 @@
 
 
 
-#pragma mark - 内部方法
-- (UIImage *)imageFromAVPicture
-{
-    avpicture_free(&picture);
-    avpicture_alloc(&picture, AV_PIX_FMT_RGB24, _outputWidth, _outputHeight);
-    struct SwsContext * imgConvertCtx = sws_getContext(p_frame->width,
-                                                       p_frame->height,
-                                                       AV_PIX_FMT_YUV420P,
-                                                       _outputWidth,
-                                                       _outputHeight,
-                                                       AV_PIX_FMT_RGB24,
-                                                       SWS_FAST_BILINEAR,
-                                                       NULL,
-                                                       NULL,
-                                                       NULL);
-    if(imgConvertCtx == nil) return nil;
-    sws_scale(imgConvertCtx,
-              p_frame->data,
-              p_frame->linesize,
-              0,
-              p_frame->height,
-              picture.data,
-              picture.linesize);
-    sws_freeContext(imgConvertCtx);
-    
-    CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault;
-    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
-                                  picture.data[0],
-                                  picture.linesize[0] * _outputHeight);
-    
-    CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGImageRef cgImage = CGImageCreate(_outputWidth,
-                                       _outputHeight,
-                                       8,
-                                       24,
-                                       picture.linesize[0],
-                                       colorSpace,
-                                       bitmapInfo,
-                                       provider,
-                                       NULL,
-                                       NO,
-                                       kCGRenderingIntentDefault);
-    UIImage *image = [UIImage imageWithCGImage:cgImage];
-    CGImageRelease(cgImage);
-    CGColorSpaceRelease(colorSpace);
-    CGDataProviderRelease(provider);
-    CFRelease(data);
-    
-    return image;
-}
+
+
+
+//#pragma mark - 内部方法
+//- (UIImage *)imageFromAVPicture
+//{
+//    if (!p_frame->data[0]) return nil;
+//
+//    avpicture_free(&picture);
+//    avpicture_alloc(&picture, AV_PIX_FMT_RGB24, _outputWidth, _outputHeight);
+//    struct SwsContext * imgConvertCtx = sws_getContext(p_frame->width,
+//                                                       p_frame->height,
+//                                                       AV_PIX_FMT_YUV420P,
+//                                                       _outputWidth,
+//                                                       _outputHeight,
+//                                                       AV_PIX_FMT_RGB24,
+//                                                       SWS_FAST_BILINEAR,
+//                                                       NULL,
+//                                                       NULL,
+//                                                       NULL);
+//    if(imgConvertCtx == nil) return nil;
+//    sws_scale(imgConvertCtx,
+//              (const uint8_t *const *)p_frame->data,
+//              p_frame->linesize,
+//              0,
+//              p_frame->height,
+//              picture.data,
+//              picture.linesize);
+//    sws_freeContext(imgConvertCtx);
+//    
+//    CGBitmapInfo bitmapInfo = kCGBitmapByteOrderDefault;
+//    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
+//                                  picture.data[0],
+//                                  picture.linesize[0] * _outputHeight);
+//    
+//    CGDataProviderRef provider = CGDataProviderCreateWithCFData(data);
+//    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+//    CGImageRef cgImage = CGImageCreate(_outputWidth,
+//                                       _outputHeight,
+//                                       8,
+//                                       24,
+//                                       picture.linesize[0],
+//                                       colorSpace,
+//                                       bitmapInfo,
+//                                       provider,
+//                                       NULL,
+//                                       NO,
+//                                       kCGRenderingIntentDefault);
+//    UIImage *image = [UIImage imageWithCGImage:cgImage];
+//    CGImageRelease(cgImage);
+//    CGColorSpaceRelease(colorSpace);
+//    CGDataProviderRelease(provider);
+//    CFRelease(data);
+//    
+//    return image;
+//}
 
 
 @end

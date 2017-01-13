@@ -8,6 +8,16 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import "libavcodec/avcodec.h"
+#import "libavformat/avformat.h"
+#import "libswscale/swscale.h"
+#import "libavutil/channel_layout.h"
+#import "libavutil/common.h"
+#import "libavutil/imgutils.h"
+#import "libavutil/opt.h"
+#import "libavutil/mathematics.h"
+#import "libavutil/samplefmt.h"
 
 @interface FLDecoder : NSObject
 
@@ -43,10 +53,11 @@
 - (void)redialPaly;
 
 /* 从视频流中读取下一帧。返回假，如果没有帧读取（视频）。 */
-- (BOOL)stepFrame;
+- (AVFrame *)stepFrame;
 
 /* 寻求最近的关键帧在指定的时间 */
 - (void)seekTime:(double)seconds;
+
 
 
 @end
