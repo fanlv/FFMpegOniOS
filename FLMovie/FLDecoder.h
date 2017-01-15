@@ -6,20 +6,14 @@
 //  Copyright © 2017年 Fanlv. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <AudioToolbox/AudioToolbox.h>
-#import "libavcodec/avcodec.h"
 #import "libavformat/avformat.h"
-#import "libswscale/swscale.h"
-#import "libavutil/channel_layout.h"
-#import "libavutil/common.h"
-#import "libavutil/imgutils.h"
-#import "libavutil/opt.h"
-#import "libavutil/mathematics.h"
-#import "libavutil/samplefmt.h"
+#import "AudioPlayer.h"
+
 
 @interface FLDecoder : NSObject
+
+@property (nonatomic, strong, readonly)AudioPlayer *audioPlayer;
 
 /* 解码后的UIImage */
 @property (nonatomic, strong, readonly) UIImage *currentImage;
@@ -57,7 +51,6 @@
 
 /* 寻求最近的关键帧在指定的时间 */
 - (void)seekTime:(double)seconds;
-
 
 
 @end

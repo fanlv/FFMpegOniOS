@@ -10,15 +10,23 @@
 
 
 #import <AudioToolbox/AudioToolbox.h>
-#import <AVFoundation/AVFoundation.h>
-#import <Accelerate/Accelerate.h>
+//#import <AVFoundation/AVFoundation.h>
 
 
 
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
+#import <AudioToolbox/AudioToolbox.h>
+#import "libavcodec/avcodec.h"
+#import "libavformat/avformat.h"
+#import "libswscale/swscale.h"
+#import "libavutil/channel_layout.h"
+#import "libavutil/common.h"
+#import "libavutil/opt.h"
+#import "libavutil/mathematics.h"
+#import "libavutil/samplefmt.h"
+#import "libavutil/imgutils.h"
+
+
 #import "AudioPacketQueue.h"
-#import "AudioPlayer.h"
 #import "AudioUtilities.h"
 
 
@@ -87,7 +95,7 @@ typedef enum _AUDIO_STATE {
     
     
     
-    AudioPlayer *aPlayer;
+    
 
     NSString *playingFilePath_;
     AudioStreamBasicDescription audioStreamBasicDesc_;
@@ -111,6 +119,7 @@ typedef enum _AUDIO_STATE {
 
 @property (nonatomic, strong) UIImage *currentImage;
 @property (assign, nonatomic) AudioQueueRef   outputQueue;
+@property (nonatomic, assign) double currentTime;
 
 @property (nonatomic, strong) NSMutableArray *receiveData;//接收数据的数组
 
@@ -119,7 +128,7 @@ typedef enum _AUDIO_STATE {
 
 @implementation FLDecoder
 
-
+@synthesize audioPlayer;
 
 #pragma mark - 重写属性访问方法
 -(void)setOutputWidth:(int)newValue
@@ -143,11 +152,7 @@ typedef enum _AUDIO_STATE {
 }
 - (double)currentTime
 {
-    if (p_format_context && videoStream >= 0) {
-        AVRational timeBase = p_format_context->streams[videoStream]->time_base;
-        return _currentVedioPacket->pts * (double)timeBase.num / timeBase.den;
-    }
-    return 0;
+    return _currentTime;
 
 }
 - (int)sourceWidth
@@ -277,7 +282,7 @@ typedef enum _AUDIO_STATE {
 
     if (audioStream != -1) {
         
-        [aPlayer stop:YES];
+        [audioPlayer stop:YES];
         p_audio_codec_parameters = p_format_context->streams[audioStream]->codecpar;
         p_audio_codec = avcodec_find_decoder(p_audio_codec_parameters->codec_id);
         p_audio_codec_context = avcodec_alloc_context3(NULL);
@@ -293,15 +298,16 @@ typedef enum _AUDIO_STATE {
             return -1;
         }
         
-//        [self initAudioOutput];
+        audioPlayer = [[AudioPlayer alloc] initAuido:nil withCodecCtx:(AVCodecContext *)p_audio_codec_context];
+
+//        if ([audioPlayer getStatus] != eAudioRunning) {
+//            NSLog(@"播放");
+//            [audioPlayer play];
+//        }
+
+      
         
-        aPlayer = [[AudioPlayer alloc] initAuido:nil withCodecCtx:(AVCodecContext *)p_audio_codec_context];
-        if ([aPlayer getStatus] != eAudioRunning) {
-            NSLog(@"播放");
-            
-            [aPlayer play];
-        }
-        
+       
     
      
         // Debug -- Begin
@@ -364,6 +370,7 @@ short *sample_buffer;
 
     if(!p_format_context)
         return nil;
+    
 
     int ret = -1;
     while (av_read_frame(p_format_context, _currentVedioPacket) >= 0)
@@ -373,19 +380,22 @@ short *sample_buffer;
         {
             ret = avcodec_send_packet(p_video_codec_context, _currentVedioPacket);
             avcodec_receive_frame(p_video_codec_context, p_frame);
-//            _currentImage = [self imageFromAVPicture];//舍去
+            
+            
+            AVRational timeBase = p_format_context->streams[videoStream]->time_base;
+            _currentTime = _currentVedioPacket->pts * (double)timeBase.num / timeBase.den;
+
             av_packet_unref(_currentVedioPacket);
+//            _currentImage = [self imageFromAVPicture];//这个是用将YUV转RGB24的方法去贴图。
+            
             break;
         }
         else{
             
-            if ([aPlayer putAVPacket:_currentVedioPacket] <=0 ) {
+            if ([audioPlayer putAVPacket:_currentVedioPacket] <=0 ) {
                 NSLog(@"Put Audio packet error");
             }
             
-            if(videoStream==-1)
-                break;
-                
 
         }
         
@@ -414,6 +424,7 @@ short *sample_buffer;
     avcodec_flush_buffers(p_audio_codec_context);
 
 }
+
 
 - (void)releaseResources
 {

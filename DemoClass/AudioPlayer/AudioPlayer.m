@@ -373,23 +373,25 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
             int gotFrame     = 0;
             int pktSize;
             int len = 0;
-            int ret = -1;
             AVCodecContext *pAudioCodecCtx = aCodecCtx;
             AVFrame *pAVFrame1 = pAudioFrame;
             pktData = aAudioPacket.data;
             pktSize = aAudioPacket.size;
             
-            while (pktSize > 0) {
+            while (pktSize > 0)
+            {
                 
                 av_frame_unref(pAVFrame1);
                 
                 @synchronized(self) {
-//                    len = avcodec_decode_audio4(pAudioCodecCtx, pAVFrame1, &gotFrame, &aAudioPacket);
+                    len = avcodec_decode_audio4(pAudioCodecCtx, pAVFrame1, &gotFrame, &aAudioPacket);
                     
-                    ret = avcodec_send_packet(pAudioCodecCtx, &aAudioPacket);
-                    avcodec_receive_frame(pAudioCodecCtx, pAVFrame1);
-                    len = pAVFrame1->pkt_size;
-                    gotFrame = (ret >= 0);
+//                    int ret = avcodec_send_packet(pAudioCodecCtx, &aAudioPacket);
+//                    avcodec_receive_frame(pAudioCodecCtx, pAVFrame1);
+//                    len = pAVFrame1->pkt_size;
+//                    gotFrame = (ret >= 0);
+//                    
+//                    NSLog(@"len : %d",len);
                 }
                 
                 if (len < 0 ) {

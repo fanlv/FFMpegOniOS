@@ -358,6 +358,12 @@
             
             while (pktSize > 0) {
                 len = avcodec_decode_audio4(pAudioCodeCtx, pAVFrame, &gotFrame, &audioPacket);
+                
+//                int ret = avcodec_send_packet(pAudioCodeCtx, &audioPacket);
+//                avcodec_receive_frame(pAudioCodeCtx, pAVFrame);
+//                len = pAVFrame->pkt_size;
+//                gotFrame = (ret >= 0);
+
                 if (len < 0) {
                     printf("Error when decoding");
                     break;
@@ -401,7 +407,7 @@
                 pktData += len;
             }
         }
-        av_free_packet(&audioPacket);
+        av_packet_unref(&audioPacket);
     }
     
     fseek(wavFile, 40, SEEK_SET);
