@@ -34,10 +34,6 @@
 - (void)dealloc
 {
     [self destroyQueue];
-    [pLock release];
-    [queues release];
-    
-    [super dealloc];
 }
 
 - (void)destroyQueue
@@ -56,7 +52,6 @@
             [packetData getBytes:&vxPacket length:sizeof(AVPacket)];
             av_packet_unref(&vxPacket);
             
-            [packetData release];
             packetData = nil;
             
             [queues removeObjectAtIndex:0];
@@ -90,8 +85,6 @@
     NSMutableData *tmpData = [[NSMutableData alloc] initWithBytes:packet length:sizeof(*packet)];
     [queues addObject:tmpData];
     
-    // Release packet
-    [tmpData release];
     tmpData = nil;
     
     _count++;

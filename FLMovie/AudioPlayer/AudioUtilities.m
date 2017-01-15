@@ -357,12 +357,12 @@
             pktSize = audioPacket.size;
             
             while (pktSize > 0) {
-                len = avcodec_decode_audio4(pAudioCodeCtx, pAVFrame, &gotFrame, &audioPacket);
+//                len = avcodec_decode_audio4(pAudioCodeCtx, pAVFrame, &gotFrame, &audioPacket);
                 
-//                int ret = avcodec_send_packet(pAudioCodeCtx, &audioPacket);
-//                avcodec_receive_frame(pAudioCodeCtx, pAVFrame);
-//                len = pAVFrame->pkt_size;
-//                gotFrame = (ret >= 0);
+                int ret = avcodec_send_packet(pAudioCodeCtx, &audioPacket);
+                avcodec_receive_frame(pAudioCodeCtx, pAVFrame);
+                len = audioPacket.size;
+                gotFrame = (ret >= 0);
 
                 if (len < 0) {
                     printf("Error when decoding");

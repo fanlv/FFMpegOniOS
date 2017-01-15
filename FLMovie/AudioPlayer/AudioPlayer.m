@@ -45,6 +45,8 @@ extern ViewController *g_viewController;
     
     long lastStartTime;
     
+    bool isFirstInit;
+    
 }
 //- (UInt32)putAVPacketsIntoAudioQueue:(AudioQueueBufferRef)audioQueueBuffer;
 //- (int)DeriveBufferSize:(AudioStreamBasicDescription)ASBdescription withPakcetSize:(UInt32)maxPacketSize andSeconds:(Float64)seconds;
@@ -67,6 +69,7 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
     int audio_index = 1;
     int vBufferSize = 0;
     int err;
+    isFirstInit = YES;
     
     // Support audio play when screen is locked
     NSError *setCategoryError = nil;
@@ -252,11 +255,16 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
     OSStatus err = noErr;
     
     mIsRunning = true;
-    lastStartTime = 0;
-    
-    for (int i = 0; i < AUDIO_BUFFER_QUANTITY; i++) {
-        [self putAVPacketsIntoAudioQueue:mBuffers[i]];
+//    if (isFirstInit)
+    {
+        lastStartTime = 0;
+        
+        for (int i = 0; i < AUDIO_BUFFER_QUANTITY; i++) {
+            [self putAVPacketsIntoAudioQueue:mBuffers[i]];
+        }
+        isFirstInit  = NO;
     }
+ 
     
     err = AudioQueueStart(mQueue, nil); // Start to play audio
     
@@ -266,9 +274,19 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
 
 }
 
+
+- (void)pause
+{
+    mIsRunning = false;
+    AudioQueueStop(mQueue, NO); // Stop playing audio
+//    AudioQueueFlush(mQueue);
+
+}
 - (void)stop:(BOOL)bStopImmediatelly
 {
     mIsRunning = false;
+    AudioQueueReset (mQueue);
+
     AudioQueueStop(mQueue, bStopImmediatelly); // Stop playing audio
     
     // Disposing of the audio queue also disposes of all its resources, including its buffers.
@@ -384,13 +402,19 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
                 av_frame_unref(pAVFrame1);
                 
                 @synchronized(self) {
-                    len = avcodec_decode_audio4(pAudioCodecCtx, pAVFrame1, &gotFrame, &aAudioPacket);
+//                    len = avcodec_decode_audio4(pAudioCodecCtx, pAVFrame1, &gotFrame, &aAudioPacket);
                     
-//                    int ret = avcodec_send_packet(pAudioCodecCtx, &aAudioPacket);
-//                    avcodec_receive_frame(pAudioCodecCtx, pAVFrame1);
-//                    len = pAVFrame1->pkt_size;
-//                    gotFrame = (ret >= 0);
-//                    
+                  
+                    
+                    int ret = avcodec_send_packet(pAudioCodecCtx, &aAudioPacket);
+                    avcodec_receive_frame(pAudioCodecCtx, pAVFrame1);
+                    len = aAudioPacket.size;
+                    gotFrame = (ret >= 0);
+                    
+//                    if (len != pAVFrame1->pkt_size) {
+//                        NSLog(@"ssssssssssssss");
+//                    }
+//
 //                    NSLog(@"len : %d",len);
                 }
                 
@@ -549,7 +573,7 @@ void HandleOutputBuffer(void *aqData, AudioQueueRef inAQ, AudioQueueBufferRef in
                 
                 int ret = avcodec_send_packet(pAudioCodecCtx, &AudioPacket);
                 avcodec_receive_frame(pAudioCodecCtx, pAVFrame1);
-                len = pAVFrame1->pkt_size;
+                len = AudioPacket.size;
                 gotFrame = (ret >= 0);
 
                 

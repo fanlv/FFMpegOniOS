@@ -31,6 +31,7 @@ typedef enum {
 
 - (id)initAuido:(AudioPacketQueue *)audioQueue withCodecCtx:(AVCodecContext *)aCodecCtx;
 - (void)play;
+- (void)pause;
 - (void)stop:(BOOL)bStopImmediatelly;
 - (void)decodeAudioFile:(NSString *)filePathIn
               toPCMFile:(NSString *)filePathOut

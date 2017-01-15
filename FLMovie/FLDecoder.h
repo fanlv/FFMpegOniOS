@@ -13,7 +13,6 @@
 
 @interface FLDecoder : NSObject
 
-@property (nonatomic, strong, readonly)AudioPlayer *audioPlayer;
 
 /* 解码后的UIImage */
 @property (nonatomic, strong, readonly) UIImage *currentImage;
@@ -51,6 +50,10 @@
 
 /* 寻求最近的关键帧在指定的时间 */
 - (void)seekTime:(double)seconds;
+
+- (void)playAudio;
+- (void)pauseAudio;
+- (void)stopAudio;
 
 
 @end

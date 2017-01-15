@@ -120,6 +120,7 @@ typedef enum _AUDIO_STATE {
 @property (nonatomic, strong) UIImage *currentImage;
 @property (assign, nonatomic) AudioQueueRef   outputQueue;
 @property (nonatomic, assign) double currentTime;
+@property (nonatomic, strong)AudioPlayer *audioPlayer;
 
 @property (nonatomic, strong) NSMutableArray *receiveData;//接收数据的数组
 
@@ -183,6 +184,7 @@ typedef enum _AUDIO_STATE {
     {
         _fps = 30;
     }
+//    _fps = ceil(_fps);
     return _fps;
 }
 
@@ -217,7 +219,7 @@ typedef enum _AUDIO_STATE {
 
     char *filepath = (char *)[moviePath UTF8String];
     isReleaseResources = NO;
-    printf("%s\n", avcodec_configuration());
+//    printf("%s\n", avcodec_configuration());
     
     
     
@@ -345,6 +347,31 @@ typedef enum _AUDIO_STATE {
 
     
     return 0;
+}
+
+- (void)playAudio
+{
+//    audioPlayer = nil;
+//    audioPlayer = [[AudioPlayer alloc] initAuido:nil withCodecCtx:p_audio_codec_context];
+    if ([audioPlayer getStatus] != eAudioRunning) {
+        NSLog(@"播放");
+        [audioPlayer play];
+    }
+
+}
+- (void)pauseAudio
+{
+    if ([audioPlayer getStatus] == eAudioRunning) {
+        [audioPlayer pause];
+    }
+}
+- (void)stopAudio
+{
+    if ([audioPlayer getStatus] == eAudioRunning) {
+        [audioPlayer stop:YES];
+    }
+
+    
 }
 
 
