@@ -24,6 +24,7 @@
 #import "FLDecoder.h"
 #import "OpenGLView20.h"
 #import "KxMovieViewController.h"
+#import "RecordViewController.h"
 
 
 @interface ViewController ()
@@ -87,11 +88,21 @@
     [Btn3 setTitle:@"全屏" forState:UIControlStateNormal];
     [Btn3 addTarget:self action:@selector(showFullScreen:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn3];
+    
+    UIButton *Btn4 = [[UIButton alloc] initWithFrame:CGRectMake(10, SCREEN_WIDTH+210, 100, 50)];
+    Btn4.backgroundColor = [UIColor blackColor];
+    [Btn4 setTitle:@"推流" forState:UIControlStateNormal];
+    [Btn4 addTarget:self action:@selector(recordCamera) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:Btn4];
 
     
 }
 
-
+- (void)recordCamera
+{
+    RecordViewController *vc = [[RecordViewController alloc] init];
+    [self.navigationController pushViewController:vc animated:YES];
+}
 
 - (void)showFullScreen:(UIButton *)sender
 {
