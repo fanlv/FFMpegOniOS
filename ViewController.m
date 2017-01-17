@@ -174,10 +174,13 @@
 
     NSString *fileUrl = [url absoluteString];
 //    fileUrl = @"rtmp://202.69.69.180:443/webcast/bshdlive-pc";//[url absoluteString]
-////    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
+//    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
 //    fileUrl =@"http://123.108.164.75/etv2sb/pld10501/playlist.m3u8";
 //    fileUrl = @"http://le.iptv.ac.cn:8888/letv.m3u8?id=cctv1HD_1800";
 
+    fileUrl = @"rtmp://10.0.202.192:1935/fanlv/home";
+
+    
     
     
     
@@ -197,7 +200,7 @@
     
     
     [self.navigationController pushViewController:vc animated:YES];
-    
+    return;
     
     
     
@@ -207,24 +210,24 @@
     
     
 
-//    _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
-//    
-//    //设置视频原始尺寸
-////    [_showView setVideoSize:_flDecoder.sourceWidth height:_flDecoder.sourceWidth];
-//
-//
-//    
-//    
-//    [_nextFrameTimer invalidate];
-//    if (_flDecoder) {
-//        _showView.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH*_flDecoder.sourceHeight/_flDecoder.sourceWidth);
-//        [_flDecoder playAudio];
-//        self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/(_flDecoder.fps)
-//                                                               target:self
-//                                                             selector:@selector(displayNextFrame:)
-//                                                             userInfo:nil
-//                                                              repeats:YES];
-//    }
+    _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
+    
+    //设置视频原始尺寸
+//    [_showView setVideoSize:_flDecoder.sourceWidth height:_flDecoder.sourceWidth];
+
+
+    
+    
+    [_nextFrameTimer invalidate];
+    if (_flDecoder) {
+        _showView.frame = CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_WIDTH*_flDecoder.sourceHeight/_flDecoder.sourceWidth);
+        [_flDecoder playAudio];
+        self.nextFrameTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/(_flDecoder.fps)
+                                                               target:self
+                                                             selector:@selector(displayNextFrame:)
+                                                             userInfo:nil
+                                                              repeats:YES];
+    }
 
 }
 
@@ -246,9 +249,6 @@
 //    }
 //    _showView.image = _flDecoder.currentImage;
     
-    
-    
-   
     
     AVFrame *frame = [_flDecoder stepFrame];
     if (frame) {

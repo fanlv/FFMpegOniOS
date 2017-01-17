@@ -175,16 +175,39 @@ typedef enum _AUDIO_STATE {
     if (videoStream<0) {
         return 30;
     }
-    AVStream *stream = p_format_context->streams[videoStream];
-    if(stream->avg_frame_rate.den && stream->avg_frame_rate.num)
-    {
-        _fps = av_q2d(stream->avg_frame_rate);
-    }
+    AVStream *st = p_format_context->streams[videoStream];
+
+    
+    
+    
+    CGFloat fps, timebase;
+    
+    if (st->time_base.den && st->time_base.num)
+        timebase = av_q2d(st->time_base);
+    else if(p_video_codec_context->time_base.den && p_video_codec_context->time_base.num)
+        timebase = av_q2d(p_video_codec_context->time_base);
     else
-    {
-        _fps = 30;
-    }
-//    _fps = ceil(_fps);
+        timebase = 0.03;
+    
+ 
+    
+    if (st->avg_frame_rate.den && st->avg_frame_rate.num)
+        fps = av_q2d(st->avg_frame_rate);
+    else if (st->r_frame_rate.den && st->r_frame_rate.num)
+        fps = av_q2d(st->r_frame_rate);
+    else
+        fps = 1.0 / timebase;
+    
+    
+    _fps = fps;
+    
+    
+    
+    
+    
+    
+    
+    
     return _fps;
 }
 

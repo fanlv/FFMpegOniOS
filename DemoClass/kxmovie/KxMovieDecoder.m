@@ -214,7 +214,6 @@ static void testConvertYUV420pToRGB(AVFrame * frame, uint8_t *outbuf, int linesi
     }
 }
 #endif
-//static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *pFPS, CGFloat *pTimeBase)
 static void avStreamFPSTimeBase(AVCodecContext *vCodecCtx,AVStream *st, CGFloat defaultTimeBase, CGFloat *pFPS, CGFloat *pTimeBase)
 {
     CGFloat fps, timebase;
@@ -789,7 +788,10 @@ static int interrupt_callback(void *ctx);
         } else {
             
             _subtitleStreams = collectStreams(_formatCtx, AVMEDIA_TYPE_SUBTITLE);
+            
         }
+        
+
     }
     
     if (errCode != kxMovieErrorNone) {
@@ -1692,6 +1694,7 @@ static int interrupt_callback(void *ctx)
 @end
 
 static void FFLog(void* context, int level, const char* format, va_list args) {
+    return;
     @autoreleasepool {
         //Trim time at the beginning and new line at the end
         NSString* message = [[NSString alloc] initWithFormat: [NSString stringWithUTF8String: format] arguments: args];
