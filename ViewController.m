@@ -67,7 +67,7 @@
     
     UIButton *Btn = [[UIButton alloc] initWithFrame:CGRectMake(10, SCREEN_WIDTH+150, 100, 50)];
     Btn.backgroundColor = [UIColor blackColor];
-    [Btn setTitle:@"播放" forState:UIControlStateNormal];
+    [Btn setTitle:@"kxmovie" forState:UIControlStateNormal];
     [Btn addTarget:self action:@selector(gotopaly) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn];
     
@@ -94,6 +94,12 @@
     [Btn4 setTitle:@"推流" forState:UIControlStateNormal];
     [Btn4 addTarget:self action:@selector(recordCamera) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn4];
+    
+    UIButton *Btn5 = [[UIButton alloc] initWithFrame:CGRectMake(120, SCREEN_WIDTH+210, 100, 50)];
+    Btn5.backgroundColor = [UIColor blackColor];
+    [Btn5 setTitle:@"播放" forState:UIControlStateNormal];
+    [Btn5 addTarget:self action:@selector(gotopaly1) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:Btn5];
 
     
 }
@@ -192,7 +198,7 @@
     fileUrl = @"rtmp://10.0.202.192:1935/fanlv/home";
 
     
-    
+
     
     
     
@@ -211,7 +217,6 @@
     
     
     [self.navigationController pushViewController:vc animated:YES];
-    return;
     
     
     
@@ -220,13 +225,30 @@
     
     
     
+
+}
+
+
+- (void)gotopaly1
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask,YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    
+    NSString *fileName = @"fanlv.h264";
+    
+    
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"fanlv1" withExtension:@"h264"];
+    
+    NSString *fileUrl = [url absoluteString];
+
+    fileUrl = [documentsDirectory stringByAppendingPathComponent:fileName];
 
     _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
     
     //设置视频原始尺寸
-//    [_showView setVideoSize:_flDecoder.sourceWidth height:_flDecoder.sourceWidth];
-
-
+    //    [_showView setVideoSize:_flDecoder.sourceWidth height:_flDecoder.sourceWidth];
+    
+    
     
     
     [_nextFrameTimer invalidate];

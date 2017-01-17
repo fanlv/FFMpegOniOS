@@ -1694,26 +1694,25 @@ static int interrupt_callback(void *ctx)
 @end
 
 static void FFLog(void* context, int level, const char* format, va_list args) {
-    return;
-    @autoreleasepool {
-        //Trim time at the beginning and new line at the end
-        NSString* message = [[NSString alloc] initWithFormat: [NSString stringWithUTF8String: format] arguments: args];
-        switch (level) {
-            case 0:
-            case 1:
-                LoggerStream(0, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
-                break;
-            case 2:
-                LoggerStream(1, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
-                break;
-            case 3:
-            case 4:
-                LoggerStream(2, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
-                break;
-            default:
-                LoggerStream(3, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
-                break;
-        }
-    }
+//    @autoreleasepool {
+//        //Trim time at the beginning and new line at the end
+//        NSString* message = [[NSString alloc] initWithFormat: [NSString stringWithUTF8String: format] arguments: args];
+//        switch (level) {
+//            case 0:
+//            case 1:
+//                LoggerStream(0, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
+//                break;
+//            case 2:
+//                LoggerStream(1, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
+//                break;
+//            case 3:
+//            case 4:
+//                LoggerStream(2, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
+//                break;
+//            default:
+//                LoggerStream(3, @"%@", [message stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]);
+//                break;
+//        }
+//    }
 }
 

@@ -65,28 +65,10 @@ typedef enum _AUDIO_STATE {
     AVFrame *p_frame;
     
     
-
-    AVPacket packet_;
-    AVPacket currentPacket_;
-//    struct  SwsContext *img_convert_ctx;
-//    uint8_t *out_vedio_buffer,*out_audio_buffer;
-
-    //------------audio----------------
-    int in_channel_layout;
-    struct SwrContext *au_convert_ctx;
-    
-//    AudioQueueRef                   _outputQueue;
-//    AudioStreamBasicDescription     audioStreamBasicDesc_;
-    AudioQueueBufferRef     _outputBuffers[kNumberAudioQueueBuffers];
-    //---------------------------------
-    
     int  videoStream,audioStream,frame_cnt;
     double              _fps;
     BOOL                isReleaseResources;
-    
-    
 
-//    AudioStreamBasicDescription     _audioFormat;
 
     
     
@@ -97,22 +79,6 @@ typedef enum _AUDIO_STATE {
     
     
 
-    NSString *playingFilePath_;
-    AudioStreamBasicDescription audioStreamBasicDesc_;
-    AudioQueueRef audioQueue_;
-    AudioQueueBufferRef audioQueueBuffer_[kNumAQBufs];
-    BOOL started_, finished_;
-    NSTimeInterval durationTime_, startedTime_;
-    NSInteger state_;
-    NSTimer *seekTimer_;
-    NSLock *decodeLock_;
-    int16_t *audioBuffer_;
-    NSUInteger audioBufferSize_;
-
-    
-    NSInteger  decodedDataSize_;
- 
-    BOOL inBuffer_;
 
 
 }
@@ -158,14 +124,14 @@ typedef enum _AUDIO_STATE {
 }
 - (int)sourceWidth
 {
-    if (p_vedio_codec_parameters) {
+    if (p_vedio_codec_parameters && p_vedio_codec_parameters->width != 0) {
         return p_vedio_codec_parameters->width;
     }
     return 640;
 }
 - (int)sourceHeight
 {
-    if (p_vedio_codec_parameters) {
+    if (p_vedio_codec_parameters && p_vedio_codec_parameters->height != 0) {
         return p_vedio_codec_parameters->height;
     }
     return 320;
@@ -286,6 +252,8 @@ typedef enum _AUDIO_STATE {
     
     //5.find decoder
     if (videoStream != -1) {
+        
+        frame_cnt = 0;
         p_vedio_codec_parameters = p_format_context->streams[videoStream]->codecpar;
         p_vedio_codec = avcodec_find_decoder(p_vedio_codec_parameters->codec_id);
         p_video_codec_context = avcodec_alloc_context3(NULL);
@@ -438,6 +406,8 @@ short *sample_buffer;
             av_packet_unref(_currentVedioPacket);
 //            _currentImage = [self imageFromAVPicture];//这个是用将YUV转RGB24的方法去贴图。
             
+            NSLog(@"video frame count : %d",frame_cnt++);
+
             break;
         }
         else{

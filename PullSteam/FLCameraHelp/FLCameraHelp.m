@@ -11,17 +11,23 @@
 #import <CoreVideo/CoreVideo.h>
 #import <CoreMedia/CoreMedia.h>
 
-@interface FLCameraHelp ()<AVCaptureVideoDataOutputSampleBufferDelegate>
 
-@property (strong,nonatomic) AVCaptureSession *session;
-@property (strong,nonatomic) AVCaptureStillImageOutput *captureOutput;
+
+
+@interface FLCameraHelp ()<AVCaptureVideoDataOutputSampleBufferDelegate,AVCaptureAudioDataOutputSampleBufferDelegate>
+
 @property (strong,nonatomic) UIImage *image;
 @property (assign,nonatomic) UIImageOrientation g_orientation;
 @property (assign,nonatomic) AVCaptureVideoPreviewLayer *preview;
 
 
+@property (nonatomic) AVCaptureConnection *vedioConnection;
+@property (nonatomic) AVCaptureConnection *audioConnection;
+
 @property (nonatomic) dispatch_queue_t videoDataOutputQueue;
 @property (nonatomic) AVCaptureVideoDataOutput *videoDataOutput;
+@property (nonatomic) AVCaptureAudioDataOutput *audioDataOutput;
+@property (nonatomic) dispatch_queue_t audioQueue;
 
 
 @end
@@ -29,15 +35,31 @@
 
 @implementation FLCameraHelp
 @synthesize session,captureOutput,g_orientation;
-@synthesize preview;
+@synthesize preview,videoDataOutput;
 
 
-- (void) initialize
+- (void)initializeWithPreset:(NSString *)sessionPreset
 {
     //1.创建会话层
     self.session = [[AVCaptureSession alloc] init];
 
-    
+    if ([session canSetSessionPreset:sessionPreset])
+    {
+        session.sessionPreset = sessionPreset;
+    }
+    else if ([session canSetSessionPreset:AVCaptureSessionPresetHigh])
+    {
+        session.sessionPreset = AVCaptureSessionPresetHigh;
+    }
+    else if ([session canSetSessionPreset:AVCaptureSessionPresetMedium])
+    {
+        session.sessionPreset = AVCaptureSessionPresetMedium;
+    }
+    else  if ([session canSetSessionPreset:AVCaptureSessionPresetLow])
+    {
+        session.sessionPreset = AVCaptureSessionPresetLow;
+    }
+
     
     //2.创建、配置输入设备
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
@@ -49,19 +71,19 @@
 	AVCaptureDeviceInput *captureInput = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
     
     
-
 	if (!captureInput)
 	{
 		NSLog(@"Error: %@", error);
 		return;
 	}
     [self.session addInput:captureInput];
+    //-------------------------------------------------------------------------------
+
     if ([device isFlashAvailable])
     {
         if ( [device lockForConfiguration:NULL] == YES )
         {
             [device setFlashMode:AVCaptureFlashModeAuto];
-
             [device unlockForConfiguration];
         }
         else
@@ -69,73 +91,80 @@
             NSLog(@"NO--lockForConfiguration");
         }
     }
-    
-    
 
-    if ([session canSetSessionPreset:AVCaptureSessionPreset640x480])
-    {
-        session.sessionPreset = AVCaptureSessionPreset640x480;
-    }
-    else if ([session canSetSessionPreset:AVCaptureSessionPresetMedium])
-    {
-        session.sessionPreset = AVCaptureSessionPresetMedium;
-    }
-    else  if ([session canSetSessionPreset:AVCaptureSessionPresetLow])
-    {
-        session.sessionPreset = AVCaptureSessionPresetLow;
-    }
 
     //3.创建、配置输出
-
-    //output device
-    AVCaptureVideoDataOutput *videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
-    if ([session canAddOutput:videoDataOutput]){
+    videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
+    if ([session canAddOutput:videoDataOutput])
+    {
         [session addOutput:videoDataOutput];
-        AVCaptureConnection *connection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
-        if ([connection isVideoStabilizationSupported]){
-            //                [connection setEnablesVideoStabilizationWhenAvailable:YES];
-            if ([connection respondsToSelector:@selector(setPreferredVideoStabilizationMode:)]
-                && [[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
-            {
-                [connection setPreferredVideoStabilizationMode:AVCaptureVideoStabilizationModeAuto];
-            }
-            else
-            {
-                [connection setEnablesVideoStabilizationWhenAvailable:YES];
-            }
-        }
-        
-        if ([connection isVideoOrientationSupported]){
-            connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
-        }
-        
-        
+        _vedioConnection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
+
         // Configure your output.
         self.videoDataOutputQueue = dispatch_queue_create("videoDataOutput", NULL);
         [videoDataOutput setSampleBufferDelegate:self queue:self.videoDataOutputQueue];
-        // Specify the pixel format
         
+#if encodeModel
+        // nv12
+        NSDictionary *settings = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                  [NSNumber numberWithUnsignedInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange],
+                                  kCVPixelBufferPixelFormatTypeKey,
+                                  nil];
+#else
+        // 32bgra
+        NSDictionary *settings = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                  [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA],
+                                  kCVPixelBufferPixelFormatTypeKey,
+                                  nil];
+#endif
         
         // Specify the pixel format
-        videoDataOutput.videoSettings = [NSDictionary dictionaryWithObject: [NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
-        //            //获取灰度图像数据
-        //            videoDataOutput.videoSettings =[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange]forKey:(id)kCVPixelBufferPixelFormatTypeKey];
-        [self setVideoDataOutput:videoDataOutput];
+        videoDataOutput.videoSettings = settings;
+        videoDataOutput.alwaysDiscardsLateVideoFrames = YES;
+        
     }
+    //-------------------------------------------------------------------------------
+
+    //-------------------------------------音频输出--------------------------------------
+    // 配置采集输出，即我们取得音频的接口
+    self.audioQueue = dispatch_queue_create("Audio Capture Queue", DISPATCH_QUEUE_SERIAL);
+    self.audioDataOutput = [[AVCaptureAudioDataOutput alloc] init];
+    [self.audioDataOutput setSampleBufferDelegate:self queue:self.audioQueue];
+    
+    if ([self.session canAddOutput:self.audioDataOutput]) {
+        [self.session addOutput:self.audioDataOutput];
+    }
+    // 保存Connection，用于在SampleBufferDelegate中判断数据来源（是Video/Audio？）
+    self.audioConnection = [self.audioDataOutput connectionWithMediaType:AVMediaTypeAudio];
+    //-------------------------------------------------------------------------------
+
     
     captureOutput = [[AVCaptureStillImageOutput alloc] init];
     NSDictionary *outputSettings = [[NSDictionary alloc] initWithObjectsAndKeys:AVVideoCodecJPEG,AVVideoCodecKey,nil];
     [captureOutput setOutputSettings:outputSettings];
     
 	[self.session addOutput:captureOutput];
+    
+    
+    
+
+
 }
 
 - (id) init
 {
 	if (self = [super init])
-        [self initialize];
+        [self initializeWithPreset:@""];
 	return self;
 }
+
+- (id)initWithPreset:(NSString *)preset
+{
+    if (self = [super init])
+        [self initializeWithPreset:preset];
+    return self;
+}
+
 
 - (BOOL)switchCamera
 {
@@ -356,6 +385,7 @@
     CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
     return data ;
 }
+
 
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput1 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection{

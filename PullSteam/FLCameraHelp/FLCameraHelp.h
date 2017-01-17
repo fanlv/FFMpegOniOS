@@ -11,6 +11,12 @@
 #import <UIKit/UIKit.h>
 
 
+// 1 : 编码模式
+// 0 : 渲染模式，当前只能渲染 32BGRA，后续增加 NV12 的渲染支持
+// 将 encodeModel 设置为1，就是编码采集到视频数据；将 encodeModel 设置为0，就是渲染采集到的视频数据
+#define encodeModel 1
+
+
 @protocol FLCameraHelpDelegate <NSObject>
 
 @optional
@@ -25,9 +31,12 @@
 
 @interface FLCameraHelp : NSObject
 
+@property (strong,nonatomic) AVCaptureSession *session;
+@property (strong,nonatomic) AVCaptureStillImageOutput *captureOutput;
 
 @property (assign,nonatomic) id<FLCameraHelpDelegate>delegate;
 
+- (id)initWithPreset:(NSString *)preset;
 
 ///开始使用摄像头取景
 - (void) startRunning;
