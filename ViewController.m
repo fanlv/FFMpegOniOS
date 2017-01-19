@@ -367,7 +367,7 @@
     
     in_filename = [[url absoluteString] UTF8String];
     out_filename = "rtmp://10.0.202.192:1935/fanlv/home";
-    in_filename = [fileName UTF8String];
+//    in_filename = [fileName UTF8String];
     
     printf("Input Path:%s\n",in_filename);
     printf("Output Path:%s\n",out_filename);

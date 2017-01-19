@@ -21,6 +21,7 @@ extern "C" {
 #include <libavutil/mathematics.h>
 #include <libavutil/time.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 
     
 #ifdef __cplusplus
@@ -111,17 +112,20 @@ extern "C" {
         return -1;
     }
     
+    
     // Param that must set
-    pCodecCtx = video_st->codec;
+//    pCodecCtx = video_st->codec;
+    pCodecCtx =  avcodec_alloc_context3(NULL);
+    avcodec_parameters_from_context(video_st->codecpar,pCodecCtx);
     pCodecCtx->codec_id = AV_CODEC_ID_H264;//fmt->video_codec;
     pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
     pCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
     pCodecCtx->width = encoder_h264_frame_width;
     pCodecCtx->height = encoder_h264_frame_height;
     pCodecCtx->time_base.num = 1;
-    pCodecCtx->time_base.den = 15;
+    pCodecCtx->time_base.den = 10;
     pCodecCtx->bit_rate = bitrate;
-    pCodecCtx->gop_size = 2;
+    pCodecCtx->gop_size = 250;
     // H264
     // pCodecCtx->me_range = 16;
     // pCodecCtx->max_qdiff = 4;
@@ -159,13 +163,22 @@ extern "C" {
 //        return -1;
     }
     
-    pFrame = av_frame_alloc();
-    //    picture_size = avpicture_get_size(pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
-    //    picture_buf = (uint8_t *)av_malloc(picture_size);
-    avpicture_fill((AVPicture *)pFrame, picture_buf, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
     
+    avcodec_parameters_from_context(video_st->codecpar,pCodecCtx);
+
+    
+    pFrame = av_frame_alloc();
+    picture_size = av_image_get_buffer_size(pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height,1);
+    picture_buf = (uint8_t *)av_malloc(picture_size);
+//    avpicture_fill((AVPicture *)pFrame, picture_buf, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
+    
+//    uint8_t *out_vedio_buffer = av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height, 1));
+    av_image_fill_arrays(pFrame->data, pFrame->linesize, picture_buf, AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height, 1);
+
     //Write File Header
-    avformat_write_header(pFormatCtx, NULL);
+    int result = avformat_write_header(pFormatCtx, NULL);
+    
+    NSLog(@"avformat_write_header : %d",result);
     
     av_new_packet(&pkt, picture_size);
     
@@ -199,16 +212,16 @@ extern "C" {
             //        }
             
             
-            UInt8 *bufferbasePtr = (UInt8 *)CVPixelBufferGetBaseAddress(imageBuffer);
+//            UInt8 *bufferbasePtr = (UInt8 *)CVPixelBufferGetBaseAddress(imageBuffer);
             UInt8 *bufferPtr = (UInt8 *)CVPixelBufferGetBaseAddressOfPlane(imageBuffer,0);
             UInt8 *bufferPtr1 = (UInt8 *)CVPixelBufferGetBaseAddressOfPlane(imageBuffer,1);
-            size_t buffeSize = CVPixelBufferGetDataSize(imageBuffer);
+//            size_t buffeSize = CVPixelBufferGetDataSize(imageBuffer);
             size_t width = CVPixelBufferGetWidth(imageBuffer);
             size_t height = CVPixelBufferGetHeight(imageBuffer);
-            size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+//            size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
             size_t bytesrow0 = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer,0);
             size_t bytesrow1  = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer,1);
-            size_t bytesrow2 = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer,2);
+//            size_t bytesrow2 = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer,2);
             UInt8 *yuv420_data = (UInt8 *)malloc(width * height *3/ 2); // buffer to store YUV with layout YYYYYYYYUUVV
             
             /* convert NV12 data to YUV420*/
@@ -244,27 +257,32 @@ extern "C" {
             
             // PTS
             pFrame->pts = framecnt;
-            int got_picture = 0;
             
             // Encode
             pFrame->width = encoder_h264_frame_width;
             pFrame->height = encoder_h264_frame_height;
             pFrame->format = AV_PIX_FMT_YUV420P;
             
-            int ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_picture);
+            
+//            int ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_picture);
+            int ret = avcodec_send_frame(pCodecCtx, pFrame);
+            avcodec_receive_packet(pCodecCtx, &pkt);
+
+            
             if(ret < 0) {
                 
                 printf("Failed to encode! \n");
                 
             }
-            if (got_picture==1) {
+            else{
                 
                 printf("Succeed to encode frame: %5d\tsize:%5d\n", framecnt, pkt.size);
                 pkt.stream_index = video_st->index;
                 
                 //FIX：No PTS (Example: Raw H.264)
                 //Simple Write PTS
-                if(pkt.pts==AV_NOPTS_VALUE){
+                if(pkt.pts==AV_NOPTS_VALUE)
+                {
                     //Write PTS
                     AVRational time_base1=video_st->time_base;
                     //Duration between 2 frames (us)
@@ -286,9 +304,10 @@ extern "C" {
                     
                 }
 
-                //Convert PTS/DTS
-                pkt.pos = -1;
-             
+//                //Convert PTS/DTS
+//                pkt.pos = -1;
+//                pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
+
                 framecnt++;
 
                 
@@ -297,7 +316,7 @@ extern "C" {
                 
                 
                 ret = av_write_frame(pFormatCtx, &pkt);
-                av_free_packet(&pkt);
+                av_packet_unref(&pkt);
             }
             
             free(yuv420_data);
@@ -316,7 +335,7 @@ extern "C" {
 {
     @synchronized (flag) {
         //Flush Encoder
-        int ret = flush_encoder(pFormatCtx,0);
+        int ret = flush_encoder(pFormatCtx,pCodecCtx,0);
         if (ret < 0) {
             
             printf("Flushing encoder failed\n");
@@ -327,7 +346,7 @@ extern "C" {
         
         //Clean
         if (video_st){
-            avcodec_close(video_st->codec);
+            avcodec_close(pCodecCtx);
             av_free(pFrame);
             //        av_free(picture_buf);
         }
@@ -337,12 +356,12 @@ extern "C" {
  
 }
 
-int flush_encoder(AVFormatContext *fmt_ctx,unsigned int stream_index)
+int flush_encoder(AVFormatContext *fmt_ctx,AVCodecContext *pCodecCtx,unsigned int stream_index)
 {
     int ret;
     int got_frame;
     AVPacket enc_pkt;
-    if (!(fmt_ctx->streams[stream_index]->codec->codec->capabilities &
+    if (!(pCodecCtx->codec->capabilities &
           CODEC_CAP_DELAY))
         return 0;
     
@@ -350,8 +369,12 @@ int flush_encoder(AVFormatContext *fmt_ctx,unsigned int stream_index)
         enc_pkt.data = NULL;
         enc_pkt.size = 0;
         av_init_packet(&enc_pkt);
-        ret = avcodec_encode_video2 (fmt_ctx->streams[stream_index]->codec, &enc_pkt,
-                                     NULL, &got_frame);
+//        ret = avcodec_encode_video2 (pCodecCtx, &enc_pkt,
+//                                     NULL, &got_frame);
+        
+        ret = avcodec_send_frame(pCodecCtx, NULL);
+        avcodec_receive_packet(pCodecCtx, &enc_pkt);
+
         av_frame_free(NULL);
         if (ret < 0)
             break;
