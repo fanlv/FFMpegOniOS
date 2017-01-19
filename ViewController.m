@@ -26,6 +26,11 @@
 #import "KxMovieViewController.h"
 #import "RecordViewController.h"
 
+#include <libavutil/mathematics.h>
+#include <libavutil/time.h>
+#include <libavformat/avformat.h>
+
+
 
 @interface ViewController ()
 {
@@ -106,12 +111,18 @@
 
 - (void)recordCamera
 {
+    
+    
+//    [self testPullStram];
     RecordViewController *vc = [[RecordViewController alloc] init];
     [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)showFullScreen:(UIButton *)sender
 {
+    [self testPullStram];
+
+    return;
     sender.selected = !sender.selected;
     
     
@@ -197,7 +208,8 @@
 
     fileUrl = @"rtmp://10.0.202.192:1935/fanlv/home";
 
-    
+//    fileUrl = @"rtmp://172.25.44.3:1935/fanlv/home";
+
 
     
     
@@ -233,7 +245,6 @@
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask,YES);
     NSString *documentsDirectory = [paths objectAtIndex:0];
-    
     NSString *fileName = @"fanlv.h264";
     
     
@@ -316,6 +327,211 @@
     //        [ImageView setTransform:CGAffineTransformMakeRotation(M_PI)];
     return [NSString stringWithFormat:@"%02d:%02d:%02d",thh,tmm,tss];
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- (void)testPullStram {
+    
+    const char *in_filename;
+    char *out_filename;
+    
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
+    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask,YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *fileName = @"fanlv.h264";
+    fileName = [documentsDirectory stringByAppendingPathComponent:fileName];
+    
+    in_filename = [[url absoluteString] UTF8String];
+    out_filename = "rtmp://10.0.202.192:1935/fanlv/home";
+    in_filename = [fileName UTF8String];
+    
+    printf("Input Path:%s\n",in_filename);
+    printf("Output Path:%s\n",out_filename);
+    
+    AVOutputFormat *ofmt = NULL;
+    AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
+    AVPacket pkt;
+
+    int ret, i;
+    int videoindex=-1;
+    int frame_index=0;
+    int64_t start_time=0;
+
+
+    av_register_all();
+    avformat_network_init();
+    if ((ret = avformat_open_input(&ifmt_ctx, in_filename, 0, 0)) < 0) {
+        printf( "Could not open input file.");
+        goto end;
+    }
+    if ((ret = avformat_find_stream_info(ifmt_ctx, 0)) < 0) {
+        printf( "Failed to retrieve input stream information");
+        goto end;
+    }
+    
+    for(i=0; i<ifmt_ctx->nb_streams; i++)
+        if(ifmt_ctx->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO){
+            videoindex=i;
+            break;
+        }
+    
+    av_dump_format(ifmt_ctx, 0, in_filename, 0);
+    
+    //Output
+    
+    avformat_alloc_output_context2(&ofmt_ctx, NULL, "flv", out_filename); //RTMP
+    //avformat_alloc_output_context2(&ofmt_ctx, NULL, "mpegts", out_filename);//UDP
+    
+    if (!ofmt_ctx) {
+        printf( "Could not create output context\n");
+        ret = AVERROR_UNKNOWN;
+        goto end;
+    }
+    ofmt = ofmt_ctx->oformat;
+    for (i = 0; i < ifmt_ctx->nb_streams; i++) {
+        
+        AVStream *in_stream = ifmt_ctx->streams[i];
+        
+        AVCodecParameters *in_p_codec_parameters = in_stream->codecpar;
+        AVCodecContext *in_pCodecCtx = avcodec_alloc_context3(NULL);
+        avcodec_parameters_to_context(in_pCodecCtx, in_p_codec_parameters);
+        
+        
+        AVStream *out_stream = avformat_new_stream(ofmt_ctx, in_pCodecCtx->codec);
+        if (!out_stream) {
+            printf( "Failed allocating output stream\n");
+            ret = AVERROR_UNKNOWN;
+            goto end;
+        }
+        
+        
+//        AVCodecContext *out_pCodecCtx = avcodec_alloc_context3(NULL);
+//        AVCodecParameters *out_p_codec_parameters;
+//        ret = avcodec_parameters_from_context(out_p_codec_parameters,in_pCodecCtx);;
+//        ret =avcodec_parameters_to_context(out_pCodecCtx,out_p_codec_parameters);
+        
+        
+        ret = avcodec_copy_context(out_stream->codec, in_pCodecCtx);
+        if (ret < 0) {
+            printf( "Failed to copy context from input to output stream codec context\n");
+            goto end;
+        }
+        
+//        out_stream->codec->codec_tag = 0;
+//        if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+//            out_stream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    }
+    //Dump Format------------------
+    av_dump_format(ofmt_ctx, 0, out_filename, 1);
+    //Open output URL
+    if (!(ofmt->flags & AVFMT_NOFILE)) {
+        ret = avio_open(&ofmt_ctx->pb, out_filename, AVIO_FLAG_WRITE);
+        if (ret < 0) {
+            printf( "Could not open output URL '%s'", out_filename);
+            goto end;
+        }
+    }
+    
+    ret = avformat_write_header(ofmt_ctx, NULL);
+    if (ret < 0) {
+        printf( "Error occurred when opening output URL\n");
+        goto end;
+    }
+    
+    start_time=av_gettime();
+    while (1) {
+        AVStream *in_stream, *out_stream;
+        //Get an AVPacket
+        ret = av_read_frame(ifmt_ctx, &pkt);
+        if (ret < 0)
+            break;
+        //FIX：No PTS (Example: Raw H.264)
+        //Simple Write PTS
+        if(pkt.pts==AV_NOPTS_VALUE){
+            //Write PTS
+            AVRational time_base1=ifmt_ctx->streams[videoindex]->time_base;
+            //Duration between 2 frames (us)
+            int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(ifmt_ctx->streams[videoindex]->r_frame_rate);
+            //Parameters
+            pkt.pts=(double)(frame_index*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+            pkt.dts=pkt.pts;
+            pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+        }
+        //Important:Delay
+        if(pkt.stream_index==videoindex){
+            AVRational time_base=ifmt_ctx->streams[videoindex]->time_base;
+            AVRational time_base_q={1,AV_TIME_BASE};
+            int64_t pts_time = av_rescale_q(pkt.dts, time_base, time_base_q);
+            int64_t now_time = av_gettime() - start_time;
+            if (pts_time > now_time)
+                av_usleep((unsigned int)(pts_time - now_time));
+            
+        }
+        
+        in_stream  = ifmt_ctx->streams[pkt.stream_index];
+        out_stream = ofmt_ctx->streams[pkt.stream_index];
+        /* copy packet */
+        //Convert PTS/DTS
+        pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+        pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
+        pkt.pos = -1;
+        //Print to Screen
+        if(pkt.stream_index==videoindex){
+            printf("Send %8d video frames to output URL\n",frame_index);
+            frame_index++;
+        }
+        //ret = av_write_frame(ofmt_ctx, &pkt);
+        ret = av_interleaved_write_frame(ofmt_ctx, &pkt);
+        
+        if (ret < 0) {
+            printf( "Error muxing packet\n");
+            break;
+        }
+        
+        av_packet_unref(&pkt);
+        
+    }
+    //写文件尾（Write file trailer）
+    av_write_trailer(ofmt_ctx);
+end:
+    avformat_close_input(&ifmt_ctx);
+    /* close output */
+    if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
+        avio_close(ofmt_ctx->pb);
+    avformat_free_context(ofmt_ctx);
+    if (ret < 0 && ret != AVERROR_EOF) {
+        printf( "Error occurred.\n");
+        return;
+    }
+    return;
+    
+}
+
 
 
 

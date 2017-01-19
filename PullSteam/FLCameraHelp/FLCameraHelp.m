@@ -21,8 +21,6 @@
 @property (assign,nonatomic) AVCaptureVideoPreviewLayer *preview;
 
 
-@property (nonatomic) AVCaptureConnection *vedioConnection;
-@property (nonatomic) AVCaptureConnection *audioConnection;
 
 @property (nonatomic) dispatch_queue_t videoDataOutputQueue;
 @property (nonatomic) AVCaptureVideoDataOutput *videoDataOutput;
@@ -61,23 +59,19 @@
     }
 
     
-    //2.创建、配置输入设备
+    //-------------------------------------视频--------------------------------------
+    //--------------------------创建、配置 视频输入设备
     AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-#if 1
     int flags = NSKeyValueObservingOptionNew; //监听自动对焦
     [device addObserver:self forKeyPath:@"adjustingFocus" options:flags context:nil];
-#endif
 	NSError *error;
 	AVCaptureDeviceInput *captureInput = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
-    
-    
 	if (!captureInput)
 	{
 		NSLog(@"Error: %@", error);
 		return;
 	}
     [self.session addInput:captureInput];
-    //-------------------------------------------------------------------------------
 
     if ([device isFlashAvailable])
     {
@@ -91,13 +85,12 @@
             NSLog(@"NO--lockForConfiguration");
         }
     }
-
-
-    //3.创建、配置输出
     videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
     if ([session canAddOutput:videoDataOutput])
     {
         [session addOutput:videoDataOutput];
+        
+        //--------------------------创建、配置输出
         _vedioConnection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
 
         // Configure your output.
@@ -117,7 +110,6 @@
                                   kCVPixelBufferPixelFormatTypeKey,
                                   nil];
 #endif
-        
         // Specify the pixel format
         videoDataOutput.videoSettings = settings;
         videoDataOutput.alwaysDiscardsLateVideoFrames = YES;
@@ -125,30 +117,32 @@
     }
     //-------------------------------------------------------------------------------
 
-    //-------------------------------------音频输出--------------------------------------
-    // 配置采集输出，即我们取得音频的接口
-    self.audioQueue = dispatch_queue_create("Audio Capture Queue", DISPATCH_QUEUE_SERIAL);
-    self.audioDataOutput = [[AVCaptureAudioDataOutput alloc] init];
-    [self.audioDataOutput setSampleBufferDelegate:self queue:self.audioQueue];
-    
-    if ([self.session canAddOutput:self.audioDataOutput]) {
-        [self.session addOutput:self.audioDataOutput];
+    //-------------------------------------音频--------------------------------------
+    //---------------------------音频输出
+    AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+    AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&error];
+    if (error) {
+        NSLog(@"Error getting video input device: %@", error.description);
     }
-    // 保存Connection，用于在SampleBufferDelegate中判断数据来源（是Video/Audio？）
-    self.audioConnection = [self.audioDataOutput connectionWithMediaType:AVMediaTypeAudio];
+    if ([self.session canAddInput:audioInput]) {
+        [self.session addInput:audioInput];
+        
+        //---------------------------配置采集输出，即我们取得音频的接口
+        self.audioDataOutput = [[AVCaptureAudioDataOutput alloc] init];
+        
+        if ([self.session canAddOutput:self.audioDataOutput]) {
+            [session addOutput:self.audioDataOutput];
+            // 保存Connection，用于在SampleBufferDelegate中判断数据来源（是Video/Audio？）
+            self.audioConnection = [self.audioDataOutput connectionWithMediaType:AVMediaTypeAudio];
+            self.audioQueue = dispatch_queue_create("Audio Capture Queue", DISPATCH_QUEUE_SERIAL);
+            [self.audioDataOutput setSampleBufferDelegate:self queue:self.audioQueue];
+        }
+    }
     //-------------------------------------------------------------------------------
-
-    
     captureOutput = [[AVCaptureStillImageOutput alloc] init];
     NSDictionary *outputSettings = [[NSDictionary alloc] initWithObjectsAndKeys:AVVideoCodecJPEG,AVVideoCodecKey,nil];
     [captureOutput setOutputSettings:outputSettings];
-    
 	[self.session addOutput:captureOutput];
-    
-    
-    
-
-
 }
 
 - (id) init

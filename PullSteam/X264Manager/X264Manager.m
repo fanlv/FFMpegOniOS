@@ -17,6 +17,12 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
     
+    
+#include <libavutil/mathematics.h>
+#include <libavutil/time.h>
+#include <libavformat/avformat.h>
+
+    
 #ifdef __cplusplus
 };
 #endif
@@ -41,6 +47,9 @@ extern "C" {
     int                                  encoder_h264_frame_height; // 编码的图像高度
     
     NSString *flag;
+    
+    int64_t start_time;
+
 }
 
 
@@ -70,22 +79,23 @@ extern "C" {
  */
 - (int)setX264ResourceWithVideoWidth:(int)width height:(int)height bitrate:(int)bitrate
 {
+    start_time=0;
     framecnt = 0;
     flag = @"1";
     encoder_h264_frame_width = width;
     encoder_h264_frame_height = height;
     
     av_register_all(); // 注册FFmpeg所有编解码器
-    
-    //Method1.
-    pFormatCtx = avformat_alloc_context();
-    //Guess Format
-    fmt = av_guess_format(NULL, out_file, NULL);
-    pFormatCtx->oformat = fmt;
+    avformat_network_init();
+//    //Method1.
+//    pFormatCtx = avformat_alloc_context();
+//    //Guess Format
+//    fmt = av_guess_format(NULL, out_file, NULL);
+//    pFormatCtx->oformat = fmt;
     
     // Method2.
-    // avformat_alloc_output_context2(&pFormatCtx, NULL, NULL, out_file);
-    // fmt = pFormatCtx->oformat;
+    avformat_alloc_output_context2(&pFormatCtx, NULL, "flv", out_file);
+    fmt = pFormatCtx->oformat;
     
     //Open output URL
     if (avio_open(&pFormatCtx->pb, out_file, AVIO_FLAG_READ_WRITE) < 0){
@@ -103,7 +113,7 @@ extern "C" {
     
     // Param that must set
     pCodecCtx = video_st->codec;
-    pCodecCtx->codec_id = fmt->video_codec;
+    pCodecCtx->codec_id = AV_CODEC_ID_H264;//fmt->video_codec;
     pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
     pCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
     pCodecCtx->width = encoder_h264_frame_width;
@@ -111,7 +121,7 @@ extern "C" {
     pCodecCtx->time_base.num = 1;
     pCodecCtx->time_base.den = 15;
     pCodecCtx->bit_rate = bitrate;
-    pCodecCtx->gop_size = 250;
+    pCodecCtx->gop_size = 2;
     // H264
     // pCodecCtx->me_range = 16;
     // pCodecCtx->max_qdiff = 4;
@@ -140,13 +150,13 @@ extern "C" {
     if (!pCodec) {
         
         printf("Can not find encoder! \n");
-        return -1;
+//        return -1;
     }
     
     if (avcodec_open2(pCodecCtx, pCodec,&param) < 0) {
         
         printf("Failed to open encoder! \n");
-        return -1;
+//        return -1;
     }
     
     pFrame = av_frame_alloc();
@@ -250,8 +260,42 @@ extern "C" {
             if (got_picture==1) {
                 
                 printf("Succeed to encode frame: %5d\tsize:%5d\n", framecnt, pkt.size);
-                framecnt++;
                 pkt.stream_index = video_st->index;
+                
+                //FIX：No PTS (Example: Raw H.264)
+                //Simple Write PTS
+                if(pkt.pts==AV_NOPTS_VALUE){
+                    //Write PTS
+                    AVRational time_base1=video_st->time_base;
+                    //Duration between 2 frames (us)
+                    int64_t calc_duration=(double)AV_TIME_BASE/av_q2d(video_st->r_frame_rate);
+                    //Parameters
+                    pkt.pts=(double)(framecnt*calc_duration)/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+                    pkt.dts=pkt.pts;
+                    pkt.duration=(double)calc_duration/(double)(av_q2d(time_base1)*AV_TIME_BASE);
+                }
+                //Important:Delay
+//                if(pkt.stream_index==videoindex)
+                {
+                    AVRational time_base=video_st->time_base;
+                    AVRational time_base_q={1,AV_TIME_BASE};
+                    int64_t pts_time = av_rescale_q(pkt.dts, time_base, time_base_q);
+                    int64_t now_time = av_gettime() - start_time;
+                    if (pts_time > now_time)
+                        av_usleep((unsigned int)(pts_time - now_time));
+                    
+                }
+
+                //Convert PTS/DTS
+                pkt.pos = -1;
+             
+                framecnt++;
+
+                
+                
+                
+                
+                
                 ret = av_write_frame(pFormatCtx, &pkt);
                 av_free_packet(&pkt);
             }

@@ -31,6 +31,10 @@
 
 @interface FLCameraHelp : NSObject
 
+@property (nonatomic) AVCaptureConnection *vedioConnection;
+@property (nonatomic) AVCaptureConnection *audioConnection;
+
+
 @property (strong,nonatomic) AVCaptureSession *session;
 @property (strong,nonatomic) AVCaptureStillImageOutput *captureOutput;
 
