@@ -25,6 +25,8 @@
 #import "OpenGLView20.h"
 #import "KxMovieViewController.h"
 #import "RecordViewController.h"
+#import <IJKMediaFramework/IJKFFMoviePlayerController.h>
+
 
 #include <libavutil/mathematics.h>
 #include <libavutil/time.h>
@@ -120,7 +122,21 @@
 
 - (void)showFullScreen:(UIButton *)sender
 {
-    [self testPullStram];
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
+
+    id  mePlayer=[[IJKFFMoviePlayerController alloc] initWithContentURL:url withOptions:nil];
+    UIView *playView=[mePlayer view];//播放器的view
+    playView.frame=CGRectMake(0,0,self.view.frame.size.width,200);
+    playView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.view insertSubview:playView atIndex:1];
+    
+    double delayInSeconds = 3;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [mePlayer play];
+        
+    });
+//    [self testPullStram];
 
     return;
     sender.selected = !sender.selected;
