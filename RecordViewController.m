@@ -27,6 +27,10 @@
 #include <libavutil/time.h>
 #include <libavformat/avformat.h>
 
+
+#import "LFLivePreview.h"
+
+
 #define SCREEN_HEIGHT                   [[UIScreen mainScreen] bounds].size.height
 #define SCREEN_WIDTH                    [[UIScreen mainScreen] bounds].size.width
 
@@ -34,7 +38,7 @@
 {
     CGSize                           videoSize;
     UIView *view;
-    RTMP *rtmp;
+//    RTMP *rtmp;
 }
 @property (nonatomic, strong) FLCameraHelp *flCameraHelp;
 @property (nonatomic, strong) X264Manager *manager264;
@@ -47,11 +51,16 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
+
+    [self.view addSubview:[[LFLivePreview alloc] initWithFrame:self.view.bounds]];
+
+    
+    /*
 
 //    NSString *path = [self savedFilePath];
 //    bool ret = [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 
-    self.view.backgroundColor = [UIColor whiteColor];
     
 //    view = [[UIView alloc] initWithFrame:CGRectMake(SCREEN_WIDTH - 120 -20, SCREEN_HEIGHT - 160 - 50 , 120, 160)];
     
@@ -79,6 +88,8 @@
     [Btn3 setTitle:@"upload" forState:UIControlStateNormal];
     [Btn3 addTarget:self action:@selector(testPullStram) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn3];
+     
+     */
   
 
 
@@ -87,34 +98,34 @@
 
 - (int)initRTMP
 {
-    /*分配与初始化*/
-    rtmp = RTMP_Alloc();
-    RTMP_Init(rtmp);
-    
-    /*设置URL*/
-    if (RTMP_SetupURL(rtmp,"rtmp://172.25.44.3:1935/fanlv/home") == FALSE) {
-        NSLog(@"RTMP_SetupURL() failed!");
-        RTMP_Free(rtmp);
-        return -1;
-    }
-    
-    /*设置可写,即发布流,这个函数必须在连接前使用,否则无效*/
-    RTMP_EnableWrite(rtmp);
-    
-    /*连接服务器*/
-    if (RTMP_Connect(rtmp, NULL) == FALSE) {
-        NSLog(@"RTMP_Connect() failed!");
-        RTMP_Free(rtmp);
-        return -1;
-    }
-    
-    /*连接流*/
-    if (RTMP_ConnectStream(rtmp,0) == FALSE) {
-        NSLog(@"RTMP_ConnectStream() failed!");
-        RTMP_Close(rtmp);
-        RTMP_Free(rtmp);
-        return -1;
-    }
+//    /*分配与初始化*/
+//    rtmp = RTMP_Alloc();
+//    RTMP_Init(rtmp);
+//    
+//    /*设置URL*/
+//    if (RTMP_SetupURL(rtmp,"rtmp://172.25.44.3:1935/fanlv/home") == FALSE) {
+//        NSLog(@"RTMP_SetupURL() failed!");
+//        RTMP_Free(rtmp);
+//        return -1;
+//    }
+//    
+//    /*设置可写,即发布流,这个函数必须在连接前使用,否则无效*/
+//    RTMP_EnableWrite(rtmp);
+//    
+//    /*连接服务器*/
+//    if (RTMP_Connect(rtmp, NULL) == FALSE) {
+//        NSLog(@"RTMP_Connect() failed!");
+//        RTMP_Free(rtmp);
+//        return -1;
+//    }
+//    
+//    /*连接流*/
+//    if (RTMP_ConnectStream(rtmp,0) == FALSE) {
+//        NSLog(@"RTMP_ConnectStream() failed!");
+//        RTMP_Close(rtmp);
+//        RTMP_Free(rtmp);
+//        return -1;
+//    }
 
     
     return 0;
@@ -122,9 +133,9 @@
 
 - (void)freeRTMP
 {
-    /*关闭与释放*/
-    RTMP_Close(rtmp);
-    RTMP_Free(rtmp);
+//    /*关闭与释放*/
+//    RTMP_Close(rtmp);
+//    RTMP_Free(rtmp);
 
 }
 

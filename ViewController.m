@@ -6,26 +6,18 @@
 //  Copyright © 2017年 Fanlv. All rights reserved.
 //
 
-#define SCREENBOUNDS                    [[UIScreen mainScreen] bounds];
-#define SCREEN_HEIGHT                   [[UIScreen mainScreen] bounds].size.height
-#define SCREEN_WIDTH                    [[UIScreen mainScreen] bounds].size.width
-#define DEVICE_IS_IPHONE4               ([[UIScreen mainScreen] bounds].size.height == 480)
-#define DEVICE_IS_IPHONE5               ([[UIScreen mainScreen] bounds].size.height == 568)
-#define DEVICE_IS_IPHONE6               ([[UIScreen mainScreen] bounds].size.height == 667)
-#define DEVICE_IS_IPHONE6P              ([[UIScreen mainScreen] bounds].size.height == 736)
-#define APP_Bundle_Identifier           [[NSBundle mainBundle] bundleIdentifier]
-#define RGB(r,g,b)                      [UIColor colorWithRed:(r)/255.0f green:(g)/255.0f blue:(b)/255.0f alpha:1]
-#define RGBA(r,g,b,a)                   [UIColor colorWithRed:(r)/255.0f green:(g)/255.0f blue:(b)/255.0f alpha:a]
 
 
 #define LERP(A,B,C) ((A)*(1.0-C)+(B)*C)
 
+
+#import "Constants.h"
 #import "ViewController.h"
 #import "FLDecoder.h"
 #import "OpenGLView20.h"
 #import "KxMovieViewController.h"
 #import "RecordViewController.h"
-#import <IJKMediaFramework/IJKFFMoviePlayerController.h>
+//#import <IJKMediaFramework/IJKFFMoviePlayerController.h>
 
 
 #include <libavutil/mathematics.h>
@@ -75,7 +67,7 @@
     UIButton *Btn = [[UIButton alloc] initWithFrame:CGRectMake(10, SCREEN_WIDTH+150, 100, 50)];
     Btn.backgroundColor = [UIColor blackColor];
     [Btn setTitle:@"kxmovie" forState:UIControlStateNormal];
-    [Btn addTarget:self action:@selector(gotopaly) forControlEvents:UIControlEventTouchUpInside];
+    [Btn addTarget:self action:@selector(gotoKxmoviePaly) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn];
     
     UIButton *Btn1 = [[UIButton alloc] initWithFrame:CGRectMake(120, SCREEN_WIDTH+150, 100, 50)];
@@ -122,23 +114,23 @@
 
 - (void)showFullScreen:(UIButton *)sender
 {
-    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
-
-    id  mePlayer=[[IJKFFMoviePlayerController alloc] initWithContentURL:url withOptions:nil];
-    UIView *playView=[mePlayer view];//播放器的view
-    playView.frame=CGRectMake(0,0,self.view.frame.size.width,200);
-    playView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view insertSubview:playView atIndex:1];
-    
-    double delayInSeconds = 3;
-    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        [mePlayer play];
-        
-    });
-//    [self testPullStram];
-
-    return;
+//    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
+//
+//    id  mePlayer=[[IJKFFMoviePlayerController alloc] initWithContentURL:url withOptions:nil];
+//    UIView *playView=[mePlayer view];//播放器的view
+//    playView.frame=CGRectMake(0,0,self.view.frame.size.width,200);
+//    playView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+//    [self.view insertSubview:playView atIndex:1];
+//    
+//    double delayInSeconds = 3;
+//    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+//    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+//        [mePlayer play];
+//        
+//    });
+////    [self testPullStram];
+//
+//    return;
     sender.selected = !sender.selected;
     
     
@@ -205,7 +197,7 @@
     
 }
 
-- (void)gotopaly
+- (void)gotoKxmoviePaly
 {
     _lastFrameTime = -1;
     
@@ -222,12 +214,12 @@
 //    fileUrl =@"http://123.108.164.75/etv2sb/pld10501/playlist.m3u8";
 //    fileUrl = @"http://le.iptv.ac.cn:8888/letv.m3u8?id=cctv1HD_1800";
 
-    fileUrl = @"rtmp://10.0.202.192:1935/fanlv/home";
+//    fileUrl = @"rtmp://10.0.202.192:1935/fanlv/home";
 
 //    fileUrl = @"rtmp://172.25.44.3:1935/fanlv/home";
 
 
-    
+    fileUrl = RTMP_URL;
     
     
     
@@ -259,16 +251,15 @@
 
 - (void)gotopaly1
 {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask,YES);
-    NSString *documentsDirectory = [paths objectAtIndex:0];
-    NSString *fileName = @"fanlv.h264";
-    
-    
-    NSURL *url = [[NSBundle mainBundle] URLForResource:@"fanlv1" withExtension:@"h264"];
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
     
     NSString *fileUrl = [url absoluteString];
 
-    fileUrl = [documentsDirectory stringByAppendingPathComponent:fileName];
+    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
+    
+    
+
+    fileUrl = RTMP_URL;
 
     _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
     
