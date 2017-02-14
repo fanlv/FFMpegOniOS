@@ -169,10 +169,7 @@
         
         videoSize = [self getVideoSize:_flCameraHelp.session.sessionPreset];
 
-        manager264 = [[X264Manager alloc]init];
-//        [manager264 setFileSavedPath:[self savedFilePath]];
-        [manager264 setFileSavedPath:@"rtmp://10.0.202.192:1935/fanlv/home"];//[self savedFilePath]];
-
+ 
         [manager264 setX264ResourceWithVideoWidth:videoSize.width height:videoSize.height bitrate:1500000];
         
         [_flCameraHelp startRunning];

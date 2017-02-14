@@ -171,6 +171,7 @@ inline static NSString *formatedSpeed(float bytes, float elapsed_milli) {
         videoConfiguration.autorotate = NO;
         videoConfiguration.sessionPreset = LFCaptureSessionPreset720x1280;
         _session = [[LFLiveSession alloc] initWithAudioConfiguration:[LFLiveAudioConfiguration defaultConfiguration] videoConfiguration:videoConfiguration captureType:LFLiveCaptureDefaultMask];
+        _session.captureDevicePosition = AVCaptureDevicePositionBack;
 
         /**    自己定制单声道  */
         /*

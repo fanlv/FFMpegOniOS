@@ -251,6 +251,7 @@
 
 - (void)gotopaly1
 {
+
     NSURL *url = [[NSBundle mainBundle] URLForResource:@"cuc_ieschool" withExtension:@"flv"];
     
     NSString *fileUrl = [url absoluteString];
