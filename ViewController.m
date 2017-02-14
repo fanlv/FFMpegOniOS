@@ -210,7 +210,7 @@
 
     NSString *fileUrl = [url absoluteString];
 //    fileUrl = @"rtmp://202.69.69.180:443/webcast/bshdlive-pc";//[url absoluteString]
-//    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
+    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
 //    fileUrl =@"http://123.108.164.75/etv2sb/pld10501/playlist.m3u8";
 //    fileUrl = @"http://le.iptv.ac.cn:8888/letv.m3u8?id=cctv1HD_1800";
 
@@ -219,7 +219,7 @@
 //    fileUrl = @"rtmp://172.25.44.3:1935/fanlv/home";
 
 
-    fileUrl = RTMP_URL;
+//    fileUrl = RTMP_URL;
     
     
     
