@@ -6,7 +6,7 @@
 //  Copyright (c) 2014年 FiberHome. All rights reserved.
 //
 
-#define RTMP_URL                        @"rtmp://10.0.203.60:1935/fanlv/home"
+#define RTMP_URL                        @"rtmp://192.168.8.35:1935/fanlv/home"
 
 
 #define SCREENBOUNDS                    [[UIScreen mainScreen] bounds];

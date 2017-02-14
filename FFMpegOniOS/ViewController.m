@@ -219,8 +219,9 @@
 //    fileUrl = @"rtmp://172.25.44.3:1935/fanlv/home";
 
 
-//    fileUrl = RTMP_URL;
-    
+    fileUrl = @"rtsp://test:123@222.177.136.243:554/cam/realmonitor?channel=1&subtype=0";
+    fileUrl = RTMP_URL;
+
     
     
     
@@ -261,6 +262,7 @@
     
 
     fileUrl = RTMP_URL;
+//    fileUrl = @"rtsp://test:123@222.177.136.243:554/cam/realmonitor?channel=1&subtype=0";
 
     _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
     

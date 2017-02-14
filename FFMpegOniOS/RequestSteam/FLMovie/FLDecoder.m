@@ -217,12 +217,18 @@ typedef enum _AUDIO_STATE {
     avformat_network_init();
     p_format_context = avformat_alloc_context();
     
+    AVDictionary* options = NULL;
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+
+    
     //2.open input stream
     if (avformat_open_input(&p_format_context, filepath, NULL, NULL) != 0)
     {
         fprintf(stderr, "Couldn't open input stream.\n");
         return -1;
     }
+    
+
     
     //3.get stream infomation
     if (avformat_find_stream_info(p_format_context, NULL)<0)

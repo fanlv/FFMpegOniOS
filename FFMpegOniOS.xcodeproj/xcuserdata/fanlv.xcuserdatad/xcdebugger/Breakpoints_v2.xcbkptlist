@@ -74,11 +74,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508043691.49016"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "227"
-            endingLineNumber = "227"
+            startingLineNumber = "228"
+            endingLineNumber = "228"
             landmarkName = "-gotoKxmoviePaly"
             landmarkType = "7">
          </BreakpointContent>
@@ -122,11 +122,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "394"
-            endingLineNumber = "394"
+            startingLineNumber = "396"
+            endingLineNumber = "396"
             landmarkName = "-testPullStram"
             landmarkType = "7">
          </BreakpointContent>
@@ -138,11 +138,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "487"
-            endingLineNumber = "487"
+            startingLineNumber = "489"
+            endingLineNumber = "489"
             landmarkName = "-testPullStram"
             landmarkType = "7">
          </BreakpointContent>
@@ -154,11 +154,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "495"
-            endingLineNumber = "495"
+            startingLineNumber = "497"
+            endingLineNumber = "497"
             landmarkName = "-testPullStram"
             landmarkType = "7">
          </BreakpointContent>
@@ -170,11 +170,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "517"
-            endingLineNumber = "517"
+            startingLineNumber = "519"
+            endingLineNumber = "519"
             landmarkName = "-testPullStram"
             landmarkType = "7">
          </BreakpointContent>
@@ -186,27 +186,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508043691.49016"
+            timestampString = "508745274.651541"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "121"
-            endingLineNumber = "121"
-            landmarkName = "-showFullScreen:"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "265"
-            endingLineNumber = "265"
+            startingLineNumber = "267"
+            endingLineNumber = "267"
             landmarkName = "-gotopaly1"
             landmarkType = "7">
          </BreakpointContent>
@@ -234,11 +218,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FFMpegOniOS/RequestSteam/FLMovie/FLDecoder.m"
-            timestampString = "508052653.39724"
+            timestampString = "508744062.088237"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "228"
-            endingLineNumber = "228"
+            startingLineNumber = "234"
+            endingLineNumber = "234"
             landmarkName = "-initDecoderWithVideo:"
             landmarkType = "7">
          </BreakpointContent>
@@ -362,12 +346,12 @@
                   moduleName = "FFMpegOniOS"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/fanlv/Documents/GitHub/FFMpegOniOS/FFMpegOniOS/LFLivePreview.m"
-                  timestampString = "508319109.204512"
+                  timestampString = "508745377.412428"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "85"
                   endingLineNumber = "85"
-                  offsetFromSymbolStart = "356">
+                  offsetFromSymbolStart = "353">
                </Location>
                <Location
                   shouldBeEnabled = "Yes"
@@ -377,12 +361,12 @@
                   moduleName = "FFMpegOniOS"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/fanlv/Documents/GitHub/FFMpegOniOS/FFMpegOniOS/LFLivePreview.m"
-                  timestampString = "508319109.20688"
+                  timestampString = "508745377.414533"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "86"
                   endingLineNumber = "86"
-                  offsetFromSymbolStart = "20">
+                  offsetFromSymbolStart = "23">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -410,12 +394,12 @@
                   moduleName = "FFMpegOniOS"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/fanlv/Documents/GitHub/FFMpegOniOS/FFMpegOniOS/LFLivePreview.m"
-                  timestampString = "508319109.211166"
+                  timestampString = "508745377.418607"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "104"
                   endingLineNumber = "104"
-                  offsetFromSymbolStart = "148">
+                  offsetFromSymbolStart = "141">
                </Location>
                <Location
                   shouldBeEnabled = "Yes"
@@ -425,12 +409,12 @@
                   moduleName = "FFMpegOniOS"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/fanlv/Documents/GitHub/FFMpegOniOS/FFMpegOniOS/LFLivePreview.m"
-                  timestampString = "508319109.213435"
+                  timestampString = "508745377.420809"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "105"
                   endingLineNumber = "105"
-                  offsetFromSymbolStart = "16">
+                  offsetFromSymbolStart = "21">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -825,13 +809,61 @@
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FFMpegOniOS/ViewController.m"
-            timestampString = "508318287.075586"
+            filePath = "FFMpegOniOS/RequestSteam/FLMovie/FLDecoder.m"
+            timestampString = "508744062.088237"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "255"
-            endingLineNumber = "255"
-            landmarkName = "-gotopaly1"
+            startingLineNumber = "242"
+            endingLineNumber = "242"
+            landmarkName = "-initDecoderWithVideo:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FFMpegOniOS/RequestSteam/FLMovie/FLDecoder.m"
+            timestampString = "508744062.088237"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "237"
+            endingLineNumber = "237"
+            landmarkName = "-initDecoderWithVideo:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FFMpegOniOS/RequestSteam/FLMovie/FLDecoder.m"
+            timestampString = "508744090.108814"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "225"
+            endingLineNumber = "225"
+            landmarkName = "-initDecoderWithVideo:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FFMpegOniOS/RequestSteam/FLMovie/FLDecoder.m"
+            timestampString = "508744135.544385"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "227"
+            endingLineNumber = "227"
+            landmarkName = "-initDecoderWithVideo:"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

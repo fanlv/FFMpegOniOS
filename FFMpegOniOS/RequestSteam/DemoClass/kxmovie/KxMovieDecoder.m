@@ -821,14 +821,20 @@ static int interrupt_callback(void *ctx);
         formatCtx->interrupt_callback = cb;
     }
     
-    if (avformat_open_input(&formatCtx, [path cStringUsingEncoding: NSUTF8StringEncoding], NULL, NULL) < 0) {
+    
+    //TCP
+    AVDictionary* options = NULL;
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+
+    
+    if (avformat_open_input(&formatCtx, [path cStringUsingEncoding: NSUTF8StringEncoding], NULL, &options) < 0) {
         
         if (formatCtx)
             avformat_free_context(formatCtx);
         return kxMovieErrorOpenFile;
     }
     
-    if (avformat_find_stream_info(formatCtx, NULL) < 0) {
+    if (avformat_find_stream_info(formatCtx, &options) < 0) {
         
         avformat_close_input(&formatCtx);
         return kxMovieErrorStreamInfoNotFound;
