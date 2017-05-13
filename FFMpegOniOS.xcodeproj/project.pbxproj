@@ -1837,8 +1837,8 @@
 				TargetAttributes = {
 					E58C550E1E2357AC00ED50C6 = {
 						CreatedOnToolsVersion = 8.2.1;
-						DevelopmentTeam = XGPB8ULV87;
-						ProvisioningStyle = Manual;
+						DevelopmentTeam = 9BQ563P4RA;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
 								enabled = 1;
@@ -2223,7 +2223,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				DEVELOPMENT_TEAM = XGPB8ULV87;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9BQ563P4RA;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2247,8 +2248,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.fanlv.FFMpegOniOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "c3280ed2-93db-4125-8161-d6f99c55f422";
-				PROVISIONING_PROFILE_SPECIFIER = ALL_Dev_Test_0206;
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				USER_HEADER_SEARCH_PATHS = "";
 				USE_HEADERMAP = YES;
 			};
@@ -2259,7 +2260,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				DEVELOPMENT_TEAM = XGPB8ULV87;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = 9BQ563P4RA;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2283,8 +2285,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.fanlv.FFMpegOniOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "c3280ed2-93db-4125-8161-d6f99c55f422";
-				PROVISIONING_PROFILE_SPECIFIER = ALL_Dev_Test_0206;
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				USER_HEADER_SEARCH_PATHS = "";
 				USE_HEADERMAP = YES;
 			};
