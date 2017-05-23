@@ -462,10 +462,131 @@ Failed:
     /*AF 00 + AAC RAW data*/
     body[0] = 0xAF;
     body[1] = 0x00;
+//    对于一般情况44100Hz双声道，这个值是0x1210，偷懒就是直接用这个值吧。
     memcpy(&body[2], audioFrame.audioInfo.bytes, audioFrame.audioInfo.length);          /*spec_buf是AAC sequence header数据*/
     [self sendPacket:RTMP_PACKET_TYPE_AUDIO data:body size:rtmpLength nTimestamp:0];
     free(body);
 }
+
+/*
+ 
+ 2.3 (AAC)AudioDecoderSpecificInfo
+ 这个长度为2个字节，可以通过计算或者调用函数获取。
+ 建议通过调用faacEncGetDecoderSpecificInfo(fh,&spec,&len);获取。
+ 一般情况双声道44100采样下，该值是0x1210
+ 
+ 
+ 
+ 当然发送的时候要打上RTMP的包头，数据部分用 AF 00 代替AAC的包头。长度再计算一下。时间戳用采样的时间也可以，自己另算也可以。
+ //--------------------------------------------------------------------------------------------------------------//
+ 第一个音频包那就是AAC header.
+ 
+ 如：af 00 13 90。包长4个字节，解释如下，
+ 
+ 1）第一个字节af，a就是10代表的意思是AAC，
+ 
+ Format of SoundData. The following values are defined:
+ 0 = Linear PCM, platform endian
+ 1 = ADPCM
+ 2 = MP3
+ 3 = Linear PCM, little endian
+ 4 = Nellymoser 16 kHz mono
+ 5 = Nellymoser 8 kHz mono
+ 6 = Nellymoser
+ 7 = G.711 A-law logarithmic PCM
+ 8 = G.711 mu-law logarithmic PCM
+ 9 = reserved
+ 10 = AAC
+ 11 = Speex
+ 14 = MP3 8 kHz
+ 15 = Device-specific sound
+ Formats 7, 8, 14, and 15 are reserved.
+ AAC is supported in Flash Player 9,0,115,0 and higher.
+ Speex is supported in Flash Player 10 and higher.
+ 
+ 2）第一个字节中的后四位f代表如下
+ 
+ 前2个bit的含义 抽样 ，代表44kHZ
+ 
+ Sampling rate. The following values are defined:
+ 0 = 5.5 kHz
+ 1 = 11 kHz
+ 2 = 22 kHz
+ 3 = 44 kHz
+ 
+ 第3个bit，代表 音频用16位的
+ 
+ Size of each audio sample. This parameter only pertains to
+ uncompressed formats. Compressed formats always decode
+ to 16 bits internally.
+ 0 = 8-bit samples
+ 1 = 16-bit samples
+ 
+ 第4个bit代表声道
+ 
+ Mono or stereo sound
+ 0 = Mono sound
+ 1 = Stereo sound
+ 
+ 3）第2个字节
+ 
+ AACPacketType，这个字段来表示AACAUDIODATA的类型：0 = AAC sequence header，1 = AAC raw。第一个音频包用0，后面的都用1
+ 
+ 4）第3，4个字节内容AudioSpecificConfig如下
+ 
+ AAC sequence header存放的是AudioSpecificConfig结构，该结构则在“ISO-14496-3 Audio”中描述。AudioSpecificConfig结构的描述非常复杂，这里我做一下简化，事先设定要将要编码的音频格式，其中，选择"AAC-LC"为音频编码，音频采样率为44100，于是AudioSpecificConfig简化为下表：
+ 
+ 
+ 
+ 0x13 0x90（1001110010000） 表示 ObjectProfile=2， AAC-LC，SamplingFrequencyIndex=7，ChannelConfiguration=声道2
+ 
+ RTMP直播到FMS中的AAC音频头 AAC Frame Header (转) - niulei20012001 - niulei20012001的博客
+ 
+ 
+ AudioSpecificConfig，即为ObjectProfile，SamplingFrequencyIndex，ChannelConfiguration，TFSpecificConfig。
+ 
+ 其中，ObjectProfile (AAC main ~1, AAC lc ~2, AAC ssr ~3)；
+ 
+ SamplingFrequencyIndex (0 ~ 96000， 1~88200， 2~64000， 3~48000， 4~44100， 5~32000， 6~24000， 7~ 22050， 8~16000...)，通常aac固定选中44100，即应该对应为4，但是试验结果表明，当音频采样率小于等于44100时，应该选择3，而当音频采样率为48000时，应该选择2；
+ 
+ ChannelConfiguration对应的是音频的频道数目。单声道对应1，双声道对应2，依次类推。
+ 
+ TFSpecificConfig的说明见标准14496-3中（1.2 T/F Audio Specific Configuration）的讲解，这里恒定的设置为0；
+ 
+ 索引值如下含义：
+ 
+ There are 13 supported frequencies:
+ 
+ 0: 96000 Hz
+ 1: 88200 Hz
+ 2: 64000 Hz
+ 3: 48000 Hz
+ 4: 44100 Hz
+ 5: 32000 Hz
+ 6: 24000 Hz
+ 7: 22050 Hz
+ 8: 16000 Hz
+ 9: 12000 Hz
+ 10: 11025 Hz
+ 11: 8000 Hz
+ 12: 7350 Hz
+ 13: Reserved
+ 14: Reserved
+ 15: frequency is written explictly
+ channel_configuration: 表示声道数
+ 
+ 0: Defined in AOT Specifc Config
+ 1: 1 channel: front-center
+ 2: 2 channels: front-left, front-right
+ 3: 3 channels: front-center, front-left, front-right
+ 4: 4 channels: front-center, front-left, front-right, back-center
+ 5: 5 channels: front-center, front-left, front-right, back-left, back-right
+ 6: 6 channels: front-center, front-left, front-right, back-left, back-right, LFE-channel
+ 7: 8 channels: front-center, front-left, front-right, side-left, side-right, back-left, back-right, LFE-channel
+ 8-15: Reserved
+ 后面的视频包都是AF 01 + 去除7个字节头的音频AAC数据
+ */
+
 
 - (void)sendAudio:(LFFrame *)frame {
 

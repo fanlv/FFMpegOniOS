@@ -127,16 +127,22 @@
         self.relativeTimestamps = frame.timestamp;
     }
     frame.timestamp = [self uploadTimestamp:frame.timestamp];
+    if ([frame isKindOfClass:[LFVideoFrame class]])
+    {
+        NSLog(@"frame.timestamp : %llu",frame.timestamp);
+    }
     [self.socket sendFrame:frame];
 }
 
 #pragma mark -- CaptureDelegate
 - (void)captureOutput:(nullable LFAudioCapture *)capture audioData:(nullable NSData*)audioData {
-    if (self.uploading) [self.audioEncoder encodeAudioData:audioData timeStamp:NOW];
+    if (self.uploading)
+        [self.audioEncoder encodeAudioData:audioData timeStamp:NOW];
 }
 
 - (void)captureOutput:(nullable LFVideoCapture *)capture pixelBuffer:(nullable CVPixelBufferRef)pixelBuffer {
-    if (self.uploading) [self.videoEncoder encodeVideoData:pixelBuffer timeStamp:NOW];
+    if (self.uploading)
+        [self.videoEncoder encodeVideoData:pixelBuffer timeStamp:NOW];
 }
 
 #pragma mark -- EncoderDelegate

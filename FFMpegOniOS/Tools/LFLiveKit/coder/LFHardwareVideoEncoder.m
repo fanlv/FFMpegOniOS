@@ -102,6 +102,10 @@
     CMTime presentationTimeStamp = CMTimeMake(frameCount, (int32_t)_configuration.videoFrameRate);
     VTEncodeInfoFlags flags;
     CMTime duration = CMTimeMake(1, (int32_t)_configuration.videoFrameRate);
+    
+    CMTimeShow(presentationTimeStamp);
+
+    CMTimeShow(duration);
 
     NSDictionary *properties = nil;
     if (frameCount % (int32_t)_configuration.videoMaxKeyframeInterval == 0) {
@@ -143,6 +147,8 @@ static void VideoCompressonOutputCallback(void *VTref, void *VTFrameRef, OSStatu
 
     BOOL keyframe = !CFDictionaryContainsKey(dic, kCMSampleAttachmentKey_NotSync);
     uint64_t timeStamp = [((__bridge_transfer NSNumber *)VTFrameRef) longLongValue];
+    
+    NSLog(@"timeStamp : %llu",timeStamp);
 
     LFHardwareVideoEncoder *videoEncoder = (__bridge LFHardwareVideoEncoder *)VTref;
     if (status != noErr) {

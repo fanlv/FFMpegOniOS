@@ -111,7 +111,7 @@
     if (AudioConverterFillComplexBuffer(m_converter, inputDataProc, &buffers, &outputDataPacketSize, &outBufferList, NULL) != noErr) {
         return;
     }
-    NSLog(@"bufferList->mBuffers[0].mDataByteSize :%u",(unsigned int)outBufferList.mBuffers[0].mDataByteSize);
+//    NSLog(@"bufferList->mBuffers[0].mDataByteSize :%u",(unsigned int)outBufferList.mBuffers[0].mDataByteSize);
 
     LFAudioFrame *audioFrame = [LFAudioFrame new];
     audioFrame.timestamp = timeStamp;
