@@ -201,9 +201,9 @@ typedef enum _AUDIO_STATE {
 
 -(int)initDecoderWithVideo:(NSString *)moviePath
 {
-    if (!isReleaseResources) {
-        [self releaseResources];
-    }
+//    if (!isReleaseResources) {
+//        [self releaseResources];
+//    }
     moviePath = [moviePath stringByRemovingPercentEncoding];
 
     char *filepath = (char *)[moviePath UTF8String];
@@ -413,6 +413,8 @@ short *sample_buffer;
 //            _currentImage = [self imageFromAVPicture];//这个是用将YUV转RGB24的方法去贴图。
             
             NSLog(@"video frame count : %d",frame_cnt++);
+            NSLog(@"p_frame->pict_type : %u", p_frame->pict_type);
+            NSLog(@"p_frame->pts : %lld", p_frame->pts);
 
             break;
         }

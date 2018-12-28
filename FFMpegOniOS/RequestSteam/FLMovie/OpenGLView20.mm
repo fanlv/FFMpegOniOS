@@ -559,9 +559,13 @@ exit:
     //        return;
     //    }
     //[self clearFrame];
-    _pFrame = pframe;
-    [self updateVertices];
-    [self render];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        _pFrame = pframe;
+        [self updateVertices];
+        [self render];
+    });
+ 
 }
 
 //    什么时候清屏？调用清屏会出现画面一闪一闪的，有问题

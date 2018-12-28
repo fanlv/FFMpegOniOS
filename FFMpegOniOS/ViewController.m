@@ -94,6 +94,7 @@
     [Btn4 addTarget:self action:@selector(recordCamera) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:Btn4];
     
+//    UIButton *Btn5 = [[UIButton alloc] initWithFrame:CGRectMake(10, SCREEN_WIDTH+150, 100, 50)];
     UIButton *Btn5 = [[UIButton alloc] initWithFrame:CGRectMake(120, SCREEN_WIDTH+210, 100, 50)];
     Btn5.backgroundColor = [UIColor blackColor];
     [Btn5 setTitle:@"播放" forState:UIControlStateNormal];
@@ -222,8 +223,8 @@
 //    fileUrl = @"rtsp://test:123@222.177.136.243:554/cam/realmonitor?channel=1&subtype=0";
 //    fileUrl = RTMP_URL;
 
-    
-    
+    fileUrl = @"rtmp://dv2.tp33.net/sat/hk041";
+
     
     NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
     
@@ -257,13 +258,20 @@
     
     NSString *fileUrl = [url absoluteString];
 
-    fileUrl = @"http://live.hkstv.hk.lxdns.com/live/hks/playlist.m3u8";
-    
-    
-
+//    fileUrl = @"http://103.233.191.138/ch5/info_ch5.live/playlist.m3u8";
+//    
+//    
+//
 //    fileUrl = RTMP_URL;
 //    fileUrl = @"rtsp://test:123@222.177.136.243:554/cam/realmonitor?channel=1&subtype=0";
+//    fileUrl = @"rtmp://dv2.tp33.net/sat/hk041";
+//    fileUrl = @"http://223.110.243.158/PLTV/3/224/3221227400/1.m3u8";
 
+//    fileUrl = @"http://live-cdn.xzxwhcb.com/hls/sn88wrar.m3u8";
+    fileUrl = @"http://60.248.127.231:8024/0.ts";
+    
+    
+    
     _flDecoder = [[FLDecoder alloc] initWithVideo:fileUrl];
     
     //设置视频原始尺寸
@@ -299,17 +307,16 @@
     NSTimeInterval startTime = [NSDate timeIntervalSinceReferenceDate];
 
     _timeLabel.text  = [self dealTime:_flDecoder.currentTime];
-//    if (![_flDecoder stepFrame]) {
-//    }
-//    _showView.image = _flDecoder.currentImage;
-    
     
     AVFrame *frame = [_flDecoder stepFrame];
     if (frame) {
-        
-        dispatch_async(dispatch_get_global_queue(0, 0), ^{
-            [_showView displayYUV420pData:frame ];
-        });
+//        _showView.image = _flDecoder.currentImage;
+        if (frame->width > 0 && frame->height > 0) {
+            dispatch_async(dispatch_get_global_queue(0, 0), ^{
+                [_showView displayYUV420pData:frame ];
+            });
+        }
+    
     }
     else
     {
